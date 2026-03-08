@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation, ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react'
+import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation, ChevronRight, ChevronDown, AlertTriangle, LayoutDashboard } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { Link } from 'react-router-dom'
 import L from 'leaflet'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
@@ -205,7 +206,7 @@ const VitalChart = ({ id, range, history, state }: { id: string, range: string, 
 };
 
 export default function Dashboard() {
-  const [data, setData] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 13.7563, lng: 100.5018, lastUpdate: new Date().toISOString() });
+  const [data, setData, requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
   const [hrHistory, setHrHistory] = useState<number[]>([]);
   const [spo2History, setSpo2History] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -214,7 +215,7 @@ export default function Dashboard() {
   const [overlayActive, setOverlayActive] = useState(false);
   const [todayFallCount, setTodayFallCount] = useState(0);
   const [address, setAddress] = useState("Locating...");
-  const [homeCoords, setHomeCoords] = useState({ lat: 13.7563, lng: 100.5018 });
+  const [homeCoords, setHomeCoords] = useState({ lat: 0, lng: 0 });
   const [weekExpanded, setWeekExpanded] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [trendMetric, setTrendMetric] = useState('hr');
@@ -227,9 +228,12 @@ export default function Dashboard() {
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       setHomeCoords(coords);
     });
+    // Proactively request sync on mount
+    requestSync();
   }, []);
 
   useEffect(() => {
+    if (data.lat === 0) return;
     const distMoved = Math.sqrt(Math.pow(data.lat - lastFetchedCoords.current.lat, 2) + Math.pow(data.lng - lastFetchedCoords.current.lng, 2));
     if (distMoved > 0.0005 || address === "Locating...") {
       const fetchAddress = async () => {
@@ -249,17 +253,11 @@ export default function Dashboard() {
   }, [data.lat, data.lng, address]);
 
   useEffect(() => {
-    if (data.lastUpdate !== lastSyncTime.current) {
+    if (data.lastUpdate !== lastSyncTime.current && data.lastUpdate !== "") {
         if ((data.sos || data.fall) && !overlayActive) {
             setOverlayActive(true);
             if (data.fall && (!lastIncident || !lastIncident.active)) {
-                setLastIncident({
-                    active: true,
-                    time: new Date(),
-                    hr: data.hr,
-                    address: address,
-                    resolvedTime: null
-                });
+                setLastIncident({ active: true, time: new Date(), hr: data.hr, address: address, resolvedTime: null });
             }
         }
         lastSyncTime.current = data.lastUpdate;
@@ -284,7 +282,10 @@ export default function Dashboard() {
 
   const hrStatus = getStatus('hr', data.hr);
   const spo2Status = getStatus('spo2', data.spo2);
-  const isAtHome = useMemo(() => Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2)) < 0.001, [data.lat, data.lng, homeCoords]);
+  const isAtHome = useMemo(() => {
+    if (data.lat === 0 || homeCoords.lat === 0) return true;
+    return Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2)) < 0.001;
+  }, [data.lat, data.lng, homeCoords]);
   const isEmergency = data.sos || data.fall || hrStatus === 'emergency' || spo2Status === 'emergency';
   const isAnomaly = hrStatus === 'anomaly' || spo2Status === 'anomaly';
   const isWatch = hrStatus === 'watch' || spo2Status === 'watch' || !isAtHome;
@@ -311,28 +312,13 @@ export default function Dashboard() {
   const cfg = stateConfig[globalState];
 
   const handleResolve = () => {
-    if (data.fall) {
-        setTodayFallCount(prev => prev + 1);
-        setLastIncident((prev: any) => ({
-            ...prev,
-            active: false,
-            resolvedTime: new Date()
-        }));
-    }
+    if (data.fall) { setTodayFallCount(prev => prev + 1); setLastIncident((prev: any) => ({ ...prev, active: false, resolvedTime: new Date() })); }
     setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() });
     setOverlayActive(false);
   };
 
-  const handleFalseAlarm = () => {
-    setLastIncident(null);
-    setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() });
-    setOverlayActive(false);
-  };
-
-  const handleCall = () => {
-    window.open('tel:911');
-    handleResolve();
-  };
+  const handleFalseAlarm = () => { setLastIncident(null); setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() }); setOverlayActive(false); };
+  const handleCall = () => { window.open('tel:911'); handleResolve(); };
 
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayDataMock = [
@@ -355,16 +341,14 @@ export default function Dashboard() {
           <div><div className="hero-title">{cfg.heroTitle}</div><div className="hero-sub">{getHeroSub()}</div><div className="live-row"><span className="live-dot"></span><span className="live-text">Live · Updated {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
         </div>
 
-        <div className="vitals-block">
-          <div className="vitals-row">
-            <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
-              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
-              <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
-            </div>
-            <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
-              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
-              <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
-            </div>
+        <div className="vitals-row">
+          <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
+            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
+            <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
+          </div>
+          <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
+            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
+            <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
           </div>
           {activeTab && (
             <div className={`chart-drawer open state-${activeTab === 'hr' ? hrStatus : spo2Status}`}>
@@ -410,17 +394,11 @@ export default function Dashboard() {
               <div className="incident-icon">⚠️</div>
               <div>
                 <div className="incident-title">Fall detected — {data.fall || (todayFallCount > 0 && selectedDay === null) || selectedDay === 6 ? 'Today' : 'Thursday 6 Mar'}</div>
-                <div className="incident-detail">
-                    Detected at {data.fall ? (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'just now') : (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '14:32')} · {data.fall ? address : (lastIncident?.address || 'Living room area')}
-                    <br />
-                    HR spiked to {data.fall ? data.hr : (lastIncident?.hr || '118')} BPM at time of fall
-                </div>
+                <div className="incident-detail">Detected at {data.fall ? (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'just now') : (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '14:32')} · {data.fall ? address : (lastIncident?.address || 'Living room area')}<br />HR spiked to {data.fall ? data.hr : (lastIncident?.hr || '118')} BPM at time of fall</div>
                 {(!data.fall && (todayFallCount > 0 && selectedDay === null || selectedDay === 6) && lastIncident?.resolvedTime) && (
                     <div className="incident-resolved">✓ Resolved · Caregiver responded {Math.round((lastIncident.resolvedTime.getTime() - lastIncident.time.getTime()) / 60000)} min later</div>
                 )}
-                {(!data.fall && selectedDay === 3) && (
-                    <div className="incident-resolved">✓ Resolved · Caregiver responded 8 min later</div>
-                )}
+                {(!data.fall && selectedDay === 3) && (<div className="incident-resolved">✓ Resolved · Caregiver responded 8 min later</div>)}
               </div>
             </div>
           )}
@@ -483,13 +461,19 @@ export default function Dashboard() {
         </div>
 
         <div className="loc-card">
-          <div className="loc-header"><div><div className="loc-label"><MapPin size={10} /> Live Location</div><div className="loc-name">{isAtHome ? '🏠 Home' : '📍 Away'}</div><div className="loc-sub">{address} · {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div></div><div className="geo-badge">Safe zone</div></div>
-          <div className="map-box"><MapContainer center={[data.lat, data.lng]} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%' }}><TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /><Marker position={[data.lat, data.lng]} /><ChangeView center={[data.lat, data.lng]} /></MapContainer></div>
+          <div className="loc-header"><div><div className="loc-label"><MapPin size={10} /> Live Location</div><div className="loc-name">{data.lat === 0 ? 'Locating...' : (isAtHome ? '🏠 Home' : '📍 Away')}</div><div className="loc-sub">{address} · {data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Waiting for sync...'}</div></div><div className="geo-badge">Safe zone</div></div>
+          <div className="map-box">
+            {data.lat === 0 ? (
+              <div className="map-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', color: '#999', fontSize: '12px' }}>Initializing GPS...</div>
+            ) : (
+              <MapContainer center={[data.lat, data.lng]} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%' }}><TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /><Marker position={[data.lat, data.lng]} /><ChangeView center={[data.lat, data.lng]} /></MapContainer>
+            )}
+          </div>
         </div>
       </div>
       <nav className="bottom-nav">
-        <button className="ni on"><Clock size={21} /><span className="ni-lbl">Dashboard</span></button>
-        <button className="ni"><MapPin size={21} /><span className="ni-lbl">Map</span></button>
+        <Link to="/" className="ni on"><Clock size={21} /><span className="ni-lbl">Dashboard</span></Link>
+        <Link to="/map" className="ni"><MapPin size={21} /><span className="ni-lbl">Map</span></Link>
         <button className="ni"><Heart size={21} /><span className="ni-lbl">Vitals</span></button>
         <button className="ni"><User size={21} /><span className="ni-lbl">Profile</span></button>
       </nav>

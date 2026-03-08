@@ -20,6 +20,22 @@ export default function Wearable() {
   const [homeLoc, setHomeLoc] = useState({ lat: 13.7563, lng: 100.5018 });
   const dataRef = useRef(data);
 
+  // Listen for sync requests from the Dashboard
+  useEffect(() => {
+    const channel = new BroadcastChannel('khlongjai_sync');
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'SYNC_REQUEST') {
+        // Broadcast current state immediately
+        channel.postMessage({ type: 'UPDATE', data: dataRef.current });
+      }
+    };
+    channel.addEventListener('message', handleMessage);
+    return () => {
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+    };
+  }, []);
+
   // Initialize with real location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {

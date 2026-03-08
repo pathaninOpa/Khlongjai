@@ -8,18 +8,26 @@ export function useBroadcastSync<T>(initialState: T) {
   // Send updates to other tabs
   const updateState = (newState: T) => {
     setState(newState);
-    channel.postMessage(newState);
+    channel.postMessage({ type: 'UPDATE', data: newState });
+  };
+
+  // Request a sync from other tabs
+  const requestSync = () => {
+    channel.postMessage({ type: 'SYNC_REQUEST' });
   };
 
   // Listen for updates from other tabs
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      setState(event.data);
+      const { type, data } = event.data;
+      if (type === 'UPDATE') {
+        setState(data);
+      }
     };
 
     channel.addEventListener('message', handleMessage);
     return () => channel.removeEventListener('message', handleMessage);
   }, []);
 
-  return [state, updateState] as const;
+  return [state, updateState, requestSync] as const;
 }
