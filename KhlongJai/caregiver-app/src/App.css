@@ -389,7 +389,13 @@ body {
 .trend-section { border-top: 1px solid var(--border); padding: 14px 18px 16px; }
 .trend-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .trend-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-.trend-tabs { display: flex; gap: 4px; }
+.trend-tabs { display: flex; gap: 4px; background: var(--bg); padding: 2px; border-radius: 20px; }
+.trend-tabs .ttab {
+  font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 18px;
+  border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+  transition: all .18s;
+}
+.trend-tabs .ttab.active { background: white; color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
 .trend-chart-wrap { position: relative; }
 .trend-svg { width: 100%; display: block; }
 .trend-tip { position: absolute; background: var(--text-primary); color: white; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .12s; white-space: nowrap; transform: translate(-50%, -115%); }
