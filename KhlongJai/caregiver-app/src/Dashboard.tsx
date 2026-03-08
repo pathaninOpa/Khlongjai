@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation } from 'lucide-react'
+import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation, ChevronRight } from 'lucide-react'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
@@ -134,7 +134,57 @@ const MiniSpark = ({ id, history }: { id: string, history: number[] }) => {
   );
 };
 
-const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall }: { data: any, onDismiss: () => void, onResolve: () => void, onCall: () => void }) => {
+const SlideToResolve = ({ onResolve }: { onResolve: () => void }) => {
+  const [dragX, setDragX] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+
+  const handleStart = (clientX: number) => {
+    isDragging.current = true;
+    startX.current = clientX - dragX;
+  };
+
+  const handleMove = (clientX: number) => {
+    if (!isDragging.current || !containerRef.current) return;
+    const maxDrag = containerRef.current.offsetWidth - 64; // container width - handle width
+    let newX = clientX - startX.current;
+    newX = Math.max(0, Math.min(maxDrag, newX));
+    setDragX(newX);
+
+    if (newX >= maxDrag - 5) {
+      isDragging.current = false;
+      onResolve();
+    }
+  };
+
+  const handleEnd = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    setDragX(0); // Reset to start if not reached the end
+  };
+
+  return (
+    <div className="slide-to-resolve" ref={containerRef}>
+      <div className="slide-track-text">slide to resolve</div>
+      <div 
+        className="slide-handle"
+        style={{ transform: `translateX(${dragX}px)` }}
+        onMouseDown={(e) => handleStart(e.clientX)}
+        onTouchStart={(e) => handleStart(e.touches[0].clientX)}
+        onMouseMove={(e) => handleMove(e.clientX)}
+        onTouchMove={(e) => handleMove(e.touches[0].clientX)}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+        onTouchEnd={handleEnd}
+      >
+        <ChevronRight size={24} />
+      </div>
+    </div>
+  );
+};
+
+const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall, onFalseAlarm }: { data: any, onDismiss: () => void, onResolve: () => void, onCall: () => void, onFalseAlarm: () => void }) => {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setElapsed(prev => prev + 1), 1000);
@@ -157,13 +207,8 @@ const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall }: { data: any, o
         <div className="alarm-ring"><div className="alarm-ring-inner">🚨</div></div>
         {elapsed > 5 && (
           <div className="elapsed-badge">
-            <div className="pulse-dot-wrap">
-              <div className="pulse-dot-ring"></div>
-              <div className="pulse-dot-core"></div>
-            </div>
-            <span className="badge-text" style={{ color: '#FCD34D' }}>
-              <span className="no-response-text">No response yet</span>
-            </span>
+            <div className="pulse-dot-wrap"><div className="pulse-dot-ring"></div><div className="pulse-dot-core"></div></div>
+            <span className="badge-text" style={{ color: '#FCD34D' }}><span className="no-response-text">No response yet</span></span>
             <div className="badge-sep"></div>
             <span className="badge-timer" style={{ color: '#FDE68A' }}>{formatTime(elapsed)}</span>
           </div>
@@ -197,8 +242,9 @@ const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall }: { data: any, o
       </div>
       <div className="overlay-actions">
         <button className="btn-call" onClick={onCall}><Phone size={18} /> Call Somchai Now</button>
-        <button className="btn-map"><Navigation size={15} /> View Live Location</button>
-        <button className="btn-dismiss" onClick={onResolve}>This was a false alarm</button>
+        <SlideToResolve onResolve={onResolve} />
+        <button className="btn-map" style={{ marginTop: '10px' }}><Navigation size={15} /> View Live Location</button>
+        <button className="btn-dismiss" onClick={onFalseAlarm}>This was a false alarm</button>
       </div>
     </div>
   );
@@ -281,12 +327,17 @@ export default function Dashboard() {
   const cfg = stateConfig[globalState];
 
   const handleResolve = () => {
+    if (data.fall) setTodayFallCount(prev => prev + 1);
+    setData({...data, sos: false, fall: false, lastUpdate: new Date().toISOString()});
+    setOverlayActive(false);
+  };
+
+  const handleFalseAlarm = () => {
     setData({...data, sos: false, fall: false, lastUpdate: new Date().toISOString()});
     setOverlayActive(false);
   };
 
   const handleCall = () => {
-    if (data.fall) setTodayFallCount(prev => prev + 1);
     window.open('tel:911');
     handleResolve();
   };
@@ -299,6 +350,7 @@ export default function Dashboard() {
           onDismiss={() => setOverlayActive(false)} 
           onResolve={handleResolve}
           onCall={handleCall}
+          onFalseAlarm={handleFalseAlarm}
         />
       )}
       
