@@ -1,7 +1,27 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation, ChevronRight } from 'lucide-react'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import L from 'leaflet'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
+
+// Leaflet Marker Icon Fix
+let DefaultIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+// Helper to update map center
+function ChangeView({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+  return null;
+}
 
 // Helper for chart data generation
 function gen(n: number, base: number, noise: number, mn: number, mx: number) {
@@ -51,7 +71,7 @@ const VitalChart = ({ id, range, history, state }: { id: string, range: string, 
   const py = (v: number) => padY + (1 - (v - yMin) / (yMax - yMin)) * (H - padY * 2);
 
   let area = `M${px(0)},${H}`;
-  pts.forEach((v, i) => { area += ` L${px(i)},${py(v)}`; });
+  pts.forEach((v, i) => { area += ` L${px(i)},py(v)`; });
   area += ` L${px(pts.length - 1)},${H} Z`;
 
   let line = `M${px(0)},${py(pts[0])}`;
@@ -147,11 +167,10 @@ const SlideToResolve = ({ onResolve }: { onResolve: () => void }) => {
 
   const handleMove = (clientX: number) => {
     if (!isDragging.current || !containerRef.current) return;
-    const maxDrag = containerRef.current.offsetWidth - 64; // container width - handle width
+    const maxDrag = containerRef.current.offsetWidth - 64; 
     let newX = clientX - startX.current;
     newX = Math.max(0, Math.min(maxDrag, newX));
     setDragX(newX);
-
     if (newX >= maxDrag - 5) {
       isDragging.current = false;
       onResolve();
@@ -161,7 +180,7 @@ const SlideToResolve = ({ onResolve }: { onResolve: () => void }) => {
   const handleEnd = () => {
     if (!isDragging.current) return;
     isDragging.current = false;
-    setDragX(0); // Reset to start if not reached the end
+    setDragX(0);
   };
 
   return (
@@ -184,7 +203,7 @@ const SlideToResolve = ({ onResolve }: { onResolve: () => void }) => {
   );
 };
 
-const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall, onFalseAlarm }: { data: any, onDismiss: () => void, onResolve: () => void, onCall: () => void, onFalseAlarm: () => void }) => {
+const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall, onFalseAlarm, address }: { data: any, onDismiss: () => void, onResolve: () => void, onCall: () => void, onFalseAlarm: () => void, address: string }) => {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setElapsed(prev => prev + 1), 1000);
@@ -216,7 +235,7 @@ const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall, onFalseAlarm }: 
         <div className="alarm-label">{data.sos ? 'SOS ALERT' : 'FALL DETECTED'}</div>
         <div className="alarm-title">Somchai needs help</div>
         <div className="alarm-name">Grandfather · Age 74</div>
-        <div className="alarm-location"><MapPin size={11} /> Bedroom · Home</div>
+        <div className="alarm-location"><MapPin size={11} /> {address}</div>
         <div className="alarm-timer">
           <span className="timer-label">{data.sos ? 'Requested' : 'Detected'}</span>
           <span className="timer-val">{elapsed < 5 ? 'just now' : formatTime(elapsed)}</span>
@@ -259,7 +278,42 @@ export default function Dashboard() {
   const [showIncident, setShowIncident] = useState(false);
   const [overlayActive, setOverlayActive] = useState(false);
   const [todayFallCount, setTodayFallCount] = useState(0);
+  const [address, setAddress] = useState("Locating...");
+  const [homeCoords, setHomeCoords] = useState({ lat: 13.7563, lng: 100.5018 });
   const lastSyncTime = useRef("");
+  const lastFetchedCoords = useRef({ lat: 0, lng: 0 });
+
+  // Initialize Home Coords
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setHomeCoords(coords);
+    });
+  }, []);
+
+  // Reverse Geocoding Effect
+  useEffect(() => {
+    const distMoved = Math.sqrt(Math.pow(data.lat - lastFetchedCoords.current.lat, 2) + Math.pow(data.lng - lastFetchedCoords.current.lng, 2));
+    if (distMoved > 0.0005 || address === "Locating...") {
+      const fetchAddress = async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${data.lat}&lon=${data.lng}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'KhlongJai-Caregiver-App' }
+          });
+          const json = await res.json();
+          const addr = json.address;
+          const display = addr.suburb || addr.neighbourhood || addr.road || addr.village || addr.city || "Current Location";
+          const city = addr.city || addr.province || addr.state || "";
+          setAddress(city ? `${display}, ${city}` : display);
+          lastFetchedCoords.current = { lat: data.lat, lng: data.lng };
+        } catch (e) {
+          console.error("Geocoding failed", e);
+        }
+      };
+      const timeout = setTimeout(fetchAddress, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [data.lat, data.lng, address]);
 
   useEffect(() => {
     if (data.lastUpdate !== lastSyncTime.current) {
@@ -342,6 +396,11 @@ export default function Dashboard() {
     handleResolve();
   };
 
+  const isAtHome = useMemo(() => {
+    const dist = Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2));
+    return dist < 0.001; 
+  }, [data.lat, data.lng, homeCoords]);
+
   return (
     <div className="dashboard-container">
       {overlayActive && (data.sos || data.fall) && (
@@ -351,6 +410,7 @@ export default function Dashboard() {
           onResolve={handleResolve}
           onCall={handleCall}
           onFalseAlarm={handleFalseAlarm}
+          address={address}
         />
       )}
       
@@ -432,7 +492,10 @@ export default function Dashboard() {
         </div>
 
         <div className="week-card">
-          <div className="week-card-header"><div className="week-card-title">Weekly Overview</div><div className="week-legend"><div className="wleg"><div className="wleg-dot" style={{ background: '#C4956A' }}></div>HR</div><div className="wleg"><div className="wleg-dot" style={{ background: 'var(--green-mid)' }}></div>SpO₂</div></div></div>
+          <div className="week-card-header"><div className="week-card-title">Weekly Overview</div><div className="week-legend">
+              <div className="wleg"><div className="wleg-dot" style={{ background: '#C4956A' }}></div>HR</div>
+              <div className="wleg"><div className="wleg-dot" style={{ background: 'var(--green-mid)' }}></div>SpO₂</div>
+            </div></div>
           <div className="week-grid">{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
               const hrVal = [69, 74, 71, 77, 68, 72, Math.round(data.hr)][i];
               const spVal = [97, 98, 97, 96, 98, 99, Math.round(data.spo2)][i];
@@ -441,8 +504,29 @@ export default function Dashboard() {
         </div>
 
         <div className="loc-card">
-          <div className="loc-header"><div><div className="loc-label"><MapPin size={10} /> Live Location</div><div className="loc-name">🏠 Home</div><div className="loc-sub">Sukhumvit, Bangkok · {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div></div><div className="geo-badge">Safe zone</div></div>
-          <div className="map-box"><svg className="map-svg" viewBox="0 0 400 145" preserveAspectRatio="xMidYMid slice"><rect width="400" height="145" fill="#E4E8E0" /><rect x="0" y="62" width="400" height="8" fill="#D0D5CA" /><rect x="0" y="96" width="400" height="5" fill="#D0D5CA" /><rect x="75" y="0" width="6" height="145" fill="#D0D5CA" /><circle cx="200" cy="68" r="14" fill="none" stroke="#3D6E4F" strokeWidth="2" className="pulse-ring" /><g className="map-pin"><circle cx="200" cy="62" r="13" fill="#3D6E4F" /><circle cx="200" cy="62" r="5" fill="white" /><polygon points="200,75 194,62 206,62" fill="#3D6E4F" /></g></svg></div>
+          <div className="loc-header">
+            <div>
+              <div className="loc-label"><MapPin size={10} /> Live Location</div>
+              <div className="loc-name">{isAtHome ? '🏠 Home' : '📍 Away'}</div>
+              <div className="loc-sub">{address} · {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+            <div className={`geo-badge ${isAtHome ? '' : 'warn'}`} style={{ background: isAtHome ? '' : 'var(--state-watch-bg)', color: isAtHome ? '' : 'var(--state-watch-text)' }}>
+                {isAtHome ? 'Safe zone' : 'Outside Safe Zone'}
+            </div>
+          </div>
+          <div className="map-box">
+            <MapContainer 
+                center={[data.lat, data.lng]} 
+                zoom={15} 
+                zoomControl={false}
+                attributionControl={false}
+                style={{ height: '100%', width: '100%' }}
+            >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker position={[data.lat, data.lng]} />
+                <ChangeView center={[data.lat, data.lng]} />
+            </MapContainer>
+          </div>
         </div>
       </div>
 
