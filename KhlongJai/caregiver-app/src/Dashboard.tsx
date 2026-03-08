@@ -215,7 +215,7 @@ export default function Dashboard() {
     normal:    { heroIcon:'🌿', heroTitle:'All is well',           heroSub:'Somchai is healthy and at home',         badge:'Normal' },
     watch:     { heroIcon:'👀', heroTitle:'Worth keeping an eye on', heroSub:'Vitals slightly elevated',          badge:'Watch' },
     anomaly:   { heroIcon:'⚠️', heroTitle:'Something needs attention', heroSub:'Metric dropping, watching closely',    badge:'Anomaly' },
-    emergency: { heroIcon:'🚨', heroTitle: data.fall ? 'Fall detected!' : 'Emergency Alert!', heroSub:'Somchai may need immediate help',       badge:'Emergency' },
+    emergency: { heroIcon:'🚨', heroTitle: data.sos ? 'SOS Alert!' : data.fall ? 'Fall detected!' : 'Emergency Alert!', heroSub:'Somchai may need immediate help',       badge:'Emergency' },
   };
 
   const getBadgeLabel = (status: string) => {
@@ -234,8 +234,8 @@ export default function Dashboard() {
     const spo2Alert = spo2Status !== 'normal';
     if (hrAlert && spo2Alert) return 'Both heart rate and SpO₂ need attention.';
     if (hrAlert) {
-      if (data.hr > 100) return 'Heart rate is elevated / increasing.';
-      if (data.hr < 60) return 'Heart rate is low / dropping.';
+      if (data.hr > 100) return 'Heart rate is elevated.';
+      if (data.hr < 60) return 'Heart rate is low.';
     }
     if (spo2Alert) return 'Blood oxygen level is dropping.';
     return 'Somchai is healthy and at home';
@@ -246,7 +246,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <div className="topbar">
-        <div className="logo"><span className="logo-dot"></span>KhlongJai</div>
+        <div className="logo">KhlongJai</div>
         <button className="profile-btn">C</button>
       </div>
 
@@ -265,7 +265,7 @@ export default function Dashboard() {
             <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
               <div className="vital-top">
                 <div className="vital-label">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   Heart Rate
                 </div>
                 <div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
             <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
               <div className="vital-top">
                 <div className="vital-label">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg>
+                  <svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg>
                   SpO₂
                 </div>
                 <div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div>
