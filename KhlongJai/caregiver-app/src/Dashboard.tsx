@@ -218,6 +218,7 @@ export default function Dashboard() {
   const [weekExpanded, setWeekExpanded] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [trendMetric, setTrendMetric] = useState('hr');
+  const [lastIncident, setLastIncident] = useState<any>(null);
   const lastSyncTime = useRef("");
   const lastFetchedCoords = useRef({ lat: 0, lng: 0 });
 
@@ -249,12 +250,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (data.lastUpdate !== lastSyncTime.current) {
-        if ((data.sos || data.fall) && !overlayActive) setOverlayActive(true);
+        if ((data.sos || data.fall) && !overlayActive) {
+            setOverlayActive(true);
+            if (data.fall && (!lastIncident || !lastIncident.active)) {
+                setLastIncident({
+                    active: true,
+                    time: new Date(),
+                    hr: data.hr,
+                    address: address,
+                    resolvedTime: null
+                });
+            }
+        }
         lastSyncTime.current = data.lastUpdate;
         setHrHistory(prev => { const newHist = prev.length === 0 ? gen(288, data.hr, 10, 40, 200) : [...prev, data.hr]; return newHist.slice(-500); });
         setSpo2History(prev => { const newHist = prev.length === 0 ? gen(288, data.spo2, 1, 88, 100) : [...prev, data.spo2]; return newHist.slice(-500); });
     }
-  }, [data, overlayActive]);
+  }, [data, overlayActive, lastIncident, address]);
 
   const getStatus = (type: 'hr' | 'spo2', val: number) => {
     if (type === 'hr') {
@@ -298,9 +310,29 @@ export default function Dashboard() {
 
   const cfg = stateConfig[globalState];
 
-  const handleResolve = () => { if (data.fall) setTodayFallCount(prev => prev + 1); setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() }); setOverlayActive(false); };
-  const handleFalseAlarm = () => { setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() }); setOverlayActive(false); };
-  const handleCall = () => { window.open('tel:911'); handleResolve(); };
+  const handleResolve = () => {
+    if (data.fall) {
+        setTodayFallCount(prev => prev + 1);
+        setLastIncident((prev: any) => ({
+            ...prev,
+            active: false,
+            resolvedTime: new Date()
+        }));
+    }
+    setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() });
+    setOverlayActive(false);
+  };
+
+  const handleFalseAlarm = () => {
+    setLastIncident(null);
+    setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() });
+    setOverlayActive(false);
+  };
+
+  const handleCall = () => {
+    window.open('tel:911');
+    handleResolve();
+  };
 
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayDataMock = [
@@ -323,27 +355,21 @@ export default function Dashboard() {
           <div><div className="hero-title">{cfg.heroTitle}</div><div className="hero-sub">{getHeroSub()}</div><div className="live-row"><span className="live-dot"></span><span className="live-text">Live · Updated {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
         </div>
 
-        <div className="vitals-row">
-          <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
-            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
-            <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
+        <div className="vitals-block">
+          <div className="vitals-row">
+            <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
+              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
+              <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
+            </div>
+            <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
+              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
+              <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
+            </div>
           </div>
-          <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
-            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
-            <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
-          </div>
-
           {activeTab && (
             <div className={`chart-drawer open state-${activeTab === 'hr' ? hrStatus : spo2Status}`}>
-              <div className="drawer-header">
-                <div className="drawer-title">
-                  {activeTab === 'hr' ? 'Heart Rate' : 'Blood Oxygen'}
-                  <div className="drawer-pill" style={{ background: 'var(--state-normal-badge-bg)', color: 'var(--state-normal-badge)' }}>{getBadgeLabel(activeTab === 'hr' ? hrStatus : spo2Status)}</div>
-                </div>
-              </div>
-              <div className="time-tabs">
-                {['6h', '12h', '24h', '7d'].map(r => (<button key={r} className={`ttab ${range === r ? 'active' : ''}`} onClick={() => setRange(r)}>{r}</button>))}
-              </div>
+              <div className="drawer-header"><div className="drawer-title">{activeTab === 'hr' ? 'Heart Rate' : 'Blood Oxygen'}<div className="drawer-pill" style={{ background: 'var(--state-normal-badge-bg)', color: 'var(--state-normal-badge)' }}>{getBadgeLabel(activeTab === 'hr' ? hrStatus : spo2Status)}</div></div></div>
+              <div className="time-tabs">{['6h', '12h', '24h', '7d'].map(r => (<button key={r} className={`ttab ${range === r ? 'active' : ''}`} onClick={() => setRange(r)}>{r}</button>))}</div>
               <VitalChart id={activeTab} range={range} history={activeTab === 'hr' ? hrHistory : spo2History} state={activeTab === 'hr' ? hrStatus : spo2Status} />
             </div>
           )}
@@ -384,8 +410,17 @@ export default function Dashboard() {
               <div className="incident-icon">⚠️</div>
               <div>
                 <div className="incident-title">Fall detected — {data.fall || (todayFallCount > 0 && selectedDay === null) || selectedDay === 6 ? 'Today' : 'Thursday 6 Mar'}</div>
-                <div className="incident-detail">Detected at {data.fall ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '14:32'} · Living room area<br />HR spiked to {data.fall ? data.hr : '118'} BPM at time of fall</div>
-                {!data.fall && <div className="incident-resolved">✓ Resolved · Caregiver responded 8 min later</div>}
+                <div className="incident-detail">
+                    Detected at {data.fall ? (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'just now') : (lastIncident?.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '14:32')} · {data.fall ? address : (lastIncident?.address || 'Living room area')}
+                    <br />
+                    HR spiked to {data.fall ? data.hr : (lastIncident?.hr || '118')} BPM at time of fall
+                </div>
+                {(!data.fall && (todayFallCount > 0 && selectedDay === null || selectedDay === 6) && lastIncident?.resolvedTime) && (
+                    <div className="incident-resolved">✓ Resolved · Caregiver responded {Math.round((lastIncident.resolvedTime.getTime() - lastIncident.time.getTime()) / 60000)} min later</div>
+                )}
+                {(!data.fall && selectedDay === 3) && (
+                    <div className="incident-resolved">✓ Resolved · Caregiver responded 8 min later</div>
+                )}
               </div>
             </div>
           )}
