@@ -134,7 +134,7 @@ const MiniSpark = ({ id, history }: { id: string, history: number[] }) => {
   );
 };
 
-const EmergencyOverlay = ({ data, onDismiss }: { data: any, onDismiss: () => void }) => {
+const EmergencyOverlay = ({ data, onDismiss, onResolve, onCall }: { data: any, onDismiss: () => void, onResolve: () => void, onCall: () => void }) => {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setElapsed(prev => prev + 1), 1000);
@@ -196,9 +196,9 @@ const EmergencyOverlay = ({ data, onDismiss }: { data: any, onDismiss: () => voi
         </div>
       </div>
       <div className="overlay-actions">
-        <button className="btn-call" onClick={() => window.open('tel:911')}><Phone size={18} /> Call Somchai Now</button>
+        <button className="btn-call" onClick={onCall}><Phone size={18} /> Call Somchai Now</button>
         <button className="btn-map"><Navigation size={15} /> View Live Location</button>
-        <button className="btn-dismiss" onClick={onDismiss}>This was a false alarm</button>
+        <button className="btn-dismiss" onClick={onResolve}>This was a false alarm</button>
       </div>
     </div>
   );
@@ -211,10 +211,13 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [range, setRange] = useState('6h');
   const [showIncident, setShowIncident] = useState(false);
+  const [overlayActive, setOverlayActive] = useState(false);
+  const [todayFallCount, setTodayFallCount] = useState(0);
   const lastSyncTime = useRef("");
 
   useEffect(() => {
     if (data.lastUpdate !== lastSyncTime.current) {
+        if ((data.sos || data.fall) && !overlayActive) setOverlayActive(true);
         lastSyncTime.current = data.lastUpdate;
         setHrHistory(prev => {
             const newHist = prev.length === 0 ? gen(288, data.hr, 10, 40, 200) : [...prev, data.hr];
@@ -225,7 +228,7 @@ export default function Dashboard() {
             return newHist.slice(-500);
         });
     }
-  }, [data]);
+  }, [data, overlayActive]);
 
   const getStatus = (type: 'hr' | 'spo2', val: number) => {
     if (type === 'hr') {
@@ -277,9 +280,27 @@ export default function Dashboard() {
 
   const cfg = stateConfig[globalState];
 
+  const handleResolve = () => {
+    setData({...data, sos: false, fall: false, lastUpdate: new Date().toISOString()});
+    setOverlayActive(false);
+  };
+
+  const handleCall = () => {
+    if (data.fall) setTodayFallCount(prev => prev + 1);
+    window.open('tel:911');
+    handleResolve();
+  };
+
   return (
     <div className="dashboard-container">
-      {(data.sos || data.fall) && <EmergencyOverlay data={data} onDismiss={() => setData({...data, sos: false, fall: false, lastUpdate: new Date().toISOString()})} />}
+      {overlayActive && (data.sos || data.fall) && (
+        <EmergencyOverlay 
+          data={data} 
+          onDismiss={() => setOverlayActive(false)} 
+          onResolve={handleResolve}
+          onCall={handleCall}
+        />
+      )}
       
       <div className="topbar">
         <div className="logo">KhlongJai</div>
@@ -287,13 +308,9 @@ export default function Dashboard() {
       </div>
 
       <div className="scroll-area">
-        <div className={`hero ${globalState}`}>
+        <div className={`hero ${globalState}`} style={{ cursor: (data.sos || data.fall) ? 'pointer' : 'default' }} onClick={() => (data.sos || data.fall) && setOverlayActive(true)}>
           <div className="hero-icon">{cfg.heroIcon}</div>
-          <div>
-            <div className="hero-title">{cfg.heroTitle}</div>
-            <div className="hero-sub">{getHeroSub()}</div>
-            <div className="live-row"><span className="live-dot"></span><span className="live-text">Live · Updated {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
-          </div>
+          <div><div className="hero-title">{cfg.heroTitle}</div><div className="hero-sub">{getHeroSub()}</div><div className="live-row"><span className="live-dot"></span><span className="live-text">Live · Updated {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
         </div>
 
         <div className="vitals-block">
@@ -317,7 +334,18 @@ export default function Dashboard() {
         <div className={`fall-card ${data.fall ? 'state-emergency' : ''}`}>
           <div className="sensor-row">
             <div className="sensor-left"><div><div className="sensor-name">Fall Detection</div><div className="sensor-sub">Wristband · Active</div></div></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div className="sensor-on"><span className="sensor-dot"></span>ON</div><div className="sensor-since">47 hrs safe<span>since last fall</span></div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="sensor-on"><span className="sensor-dot"></span>ON</div>
+              <div className="sensor-since">
+                {data.fall ? (
+                  <span style={{ color: 'var(--red)', fontWeight: 700 }}>Active Alert</span>
+                ) : todayFallCount > 0 ? (
+                  <>0 hrs safe<span>since today's fall</span></>
+                ) : (
+                  <>47 hrs safe<span>since last fall</span></>
+                )}
+              </div>
+            </div>
           </div>
           <div className="safe-summary">
             <div className="safe-icon">{data.fall ? '🚨' : '🧍'}</div>
@@ -326,20 +354,24 @@ export default function Dashboard() {
           <div className="history-grid">
             <div className="history-label">Last 7 days<div className="history-legend"><div className="hleg"><div className="hleg-dot" style={{ background: 'var(--green)' }}></div>Clear</div><div className="hleg"><div className="hleg-dot" style={{ background: 'var(--red)' }}></div>Fall</div></div></div>
             <div className="history-days">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                <div key={i} className={`hday ${i === 6 ? 'today' : ''}`} onClick={() => i === 3 ? setShowIncident(!showIncident) : setShowIncident(false)}>
-                  <div className="hday-name">{day}</div>
-                  <div className={`hday-dot ${i === 3 ? 'incident' : i < 6 ? 'clear' : data.fall ? 'incident' : 'clear'}`}></div>
-                  <div className={`hday-count ${i === 3 || (i === 6 && data.fall) ? 'red' : ''}`}>{i === 3 || (i === 6 && data.fall) ? '1' : ''}</div>
-                </div>
-              ))}
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+                const isToday = i === 6;
+                const hasIncident = (i === 3) || (isToday && (data.fall || todayFallCount > 0));
+                return (
+                  <div key={i} className={`hday ${isToday ? 'today' : ''}`} onClick={() => (i === 3 || (isToday && todayFallCount > 0)) ? setShowIncident(!showIncident) : setShowIncident(false)}>
+                    <div className="hday-name">{day}</div>
+                    <div className={`hday-dot ${hasIncident ? 'incident' : i < 6 ? 'clear' : 'clear'}`}></div>
+                    <div className={`hday-count ${hasIncident ? 'red' : ''}`}>{(isToday && todayFallCount > 0) ? todayFallCount : i === 3 ? '1' : ''}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
-          {(showIncident || data.fall) && (
+          {(showIncident || data.fall || (todayFallCount > 0 && showIncident)) && (
             <div className="incident-row">
               <div className="incident-icon">⚠️</div>
               <div>
-                <div className="incident-title">Fall detected — {data.fall ? 'Today' : 'Thursday 6 Mar'}</div>
+                <div className="incident-title">Fall detected — {data.fall || todayFallCount > 0 ? 'Today' : 'Thursday 6 Mar'}</div>
                 <div className="incident-detail">Detected at {data.fall ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '14:32'} · Living room area<br />HR spiked to {data.fall ? data.hr : '118'} BPM at time of fall</div>
                 {!data.fall && <div className="incident-resolved">✓ Resolved · Caregiver responded 8 min later</div>}
               </div>
