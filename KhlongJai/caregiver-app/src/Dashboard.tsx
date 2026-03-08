@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User } from 'lucide-react'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
@@ -20,17 +20,20 @@ function nightDip(arr: number[]) {
   return newArr;
 }
 
-const VitalChart = ({ id, range, value, state }: { id: string, range: string, value: number, state: string }) => {
+const VitalChart = ({ id, range, history, state }: { id: string, range: string, history: number[], state: string }) => {
   const isHR = id === 'hr';
   
-  const historyData = useMemo(() => {
+  const displayData = useMemo(() => {
     const counts: Record<string, number> = { '6h': 72, '12h': 144, '24h': 288, '7d': 168 };
     const n = counts[range];
-    let d = gen(n, value, isHR ? 10 : 1.2, isHR ? 56 : 93, isHR ? 108 : 100);
-    if (isHR && range !== '7d') d = nightDip(d);
-    d[d.length - 1] = value;
-    return d;
-  }, [range, value, isHR]);
+    // Slice the history to match the requested range count, or pad with generated data if too short
+    if (history.length >= n) {
+        return history.slice(-n);
+    } else {
+        const padding = gen(n - history.length, history[0] || (isHR ? 72 : 98), isHR ? 5 : 0.5, isHR ? 40 : 88, isHR ? 200 : 100);
+        return [...padding, ...history];
+    }
+  }, [range, history, isHR]);
 
   const getStateColor = () => {
     switch (state) {
@@ -45,9 +48,12 @@ const VitalChart = ({ id, range, value, state }: { id: string, range: string, va
   const minY = isHR ? 40 : 88;
   const maxY = isHR ? 200 : 100;
   const W = 370, H = 100, padX = 4, padY = 8;
-  const step = Math.max(1, Math.floor(historyData.length / 60));
+  
+  // Downsample for rendering performance
+  const step = Math.max(1, Math.floor(displayData.length / 60));
   const pts: number[] = [];
-  for (let i = 0; i < historyData.length; i += step) pts.push(historyData[i]);
+  for (let i = 0; i < displayData.length; i += step) pts.push(displayData[i]);
+  
   const mn = Math.min(...pts), mx = Math.max(...pts);
   const yMin = Math.min(mn - 4, minY), yMax = Math.max(mx + 4, maxY);
   const px = (i: number) => padX + (i / (pts.length - 1)) * (W - padX * 2);
@@ -69,16 +75,7 @@ const VitalChart = ({ id, range, value, state }: { id: string, range: string, va
 
   const avg = Math.round(pts.reduce((a, b) => a + b, 0) / pts.length);
   const pMn = Math.min(...pts), pMx = Math.max(...pts);
-  
-  let phase = 'Resting';
-  if (isHR) {
-    const a8 = pts.slice(-8).reduce((a, b) => a + b, 0) / 8;
-    phase = a8 < 68 ? 'Sleeping' : a8 < 82 ? 'Resting' : 'Active';
-  }
-
-  const pills = isHR
-    ? [{ dot: color, l: 'Avg', v: avg + ' BPM' }, { dot: '#6BAE80', l: 'Low', v: pMn + ' BPM' }, { dot: color, l: 'Peak', v: pMx + ' BPM' }, { dot: phase === 'Sleeping' ? '#818CF8' : phase === 'Active' ? '#D97706' : '#6BAE80', l: 'State', v: phase }]
-    : [{ dot: color, l: 'Avg', v: avg + '%' }, { dot: '#D97706', l: 'Low', v: pMn + '%' }, { dot: color, l: 'Peak', v: pMx + '%' }, { dot: pMn >= 95 ? '#6BAE80' : color, l: 'Status', v: pMn >= 95 ? 'Stable' : 'Watch' }];
+  const currentVal = pts[pts.length - 1];
 
   return (
     <div className="drawer-body">
@@ -86,11 +83,11 @@ const VitalChart = ({ id, range, value, state }: { id: string, range: string, va
         <div className="range-label-row">
           <span className="range-lbl">{minY}{isHR ? ' BPM' : '%'}</span>
           <span className="range-lbl" style={{ color: color, fontWeight: 600 }}>Normal {isHR ? '60–100' : '≥ 95%'}</span>
-          <span className="range-lbl">{isHR ? '160' : '100'}{isHR ? ' BPM' : '%'}</span>
+          <span className="range-lbl">{isHR ? '200' : '100'}{isHR ? ' BPM' : '%'}</span>
         </div>
         <div className="range-bar">
           <div className="range-fill" style={{ left: isHR ? '16%' : '58%', width: isHR ? '50%' : '42%', background: `${color}22` }}></div>
-          <div className="range-thumb" style={{ background: color, left: `${Math.max(2, Math.min(98, ((value - minY) / ((isHR ? 160 : 100) - minY)) * 100))}%` }}></div>
+          <div className="range-thumb" style={{ background: color, left: `${Math.max(2, Math.min(98, ((currentVal - minY) / ((isHR ? 200 : 100) - minY)) * 100))}%` }}></div>
         </div>
       </div>
       <div className="chart-wrap">
@@ -121,21 +118,25 @@ const VitalChart = ({ id, range, value, state }: { id: string, range: string, va
         ))}
       </div>
       <div className="insight-strip">
-        {pills.map((p, i) => (
-          <div key={i} className="insight-pill">
-            <div className="pip-dot" style={{ background: p.dot }}></div>
-            <span style={{ color: 'var(--text-muted)' }}>{p.l}</span>
-            <span className="val">{p.v}</span>
-          </div>
-        ))}
+        <div className="insight-pill"><div className="pip-dot" style={{ background: color }}></div><span style={{ color: 'var(--text-muted)' }}>Avg</span><span className="val">{avg}{isHR?' BPM':'%'}</span></div>
+        <div className="insight-pill"><div className="pip-dot" style={{ background: '#6BAE80' }}></div><span style={{ color: 'var(--text-muted)' }}>Low</span><span className="val">{pMn}{isHR?' BPM':'%'}</span></div>
+        <div className="insight-pill"><div className="pip-dot" style={{ background: color }}></div><span style={{ color: 'var(--text-muted)' }}>Peak</span><span className="val">{pMx}{isHR?' BPM':'%'}</span></div>
       </div>
     </div>
   );
 };
 
-const MiniSpark = ({ id, value }: { id: string, value: number }) => {
+const MiniSpark = ({ id, history }: { id: string, history: number[] }) => {
   const isHR = id === 'hr';
-  const pts = useMemo(() => gen(30, value, isHR ? 5 : 0.6, isHR ? 60 : 94, isHR ? 100 : 99), [value, isHR]);
+  const pts = useMemo(() => {
+      const data = history.slice(-30);
+      if (data.length < 30) {
+          const padding = gen(30 - data.length, data[0] || (isHR ? 72 : 98), 2, 60, 100);
+          return [...padding, ...data];
+      }
+      return data;
+  }, [history, isHR]);
+
   const mn = Math.min(...pts), mx = Math.max(...pts), W = 200, H = 26;
   const px = (i: number) => i / (pts.length - 1) * W;
   const py = (v: number) => H - (v - mn) / (mx - mn + .01) * (H - 4) - 2;
@@ -165,6 +166,25 @@ export default function Dashboard() {
     lng: 100.5018,
     lastUpdate: new Date().toISOString()
   });
+
+  const [hrHistory, setHrHistory] = useState<number[]>([]);
+  const [spo2History, setSpo2History] = useState<number[]>([]);
+  const lastSyncTime = useRef("");
+
+  // Update history when data changes
+  useEffect(() => {
+    if (data.lastUpdate !== lastSyncTime.current) {
+        lastSyncTime.current = data.lastUpdate;
+        setHrHistory(prev => {
+            const newHist = prev.length === 0 ? gen(288, data.hr, 10, 40, 200) : [...prev, data.hr];
+            return newHist.slice(-500); // Keep last 500 points
+        });
+        setSpo2History(prev => {
+            const newHist = prev.length === 0 ? gen(288, data.spo2, 1, 88, 100) : [...prev, data.spo2];
+            return newHist.slice(-500);
+        });
+    }
+  }, [data]);
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [range, setRange] = useState('6h');
@@ -210,23 +230,14 @@ export default function Dashboard() {
   const getHeroSub = () => {
     if (data.fall) return 'Fall detected! Immediate help might be needed.';
     if (data.sos) return 'Somchai is requesting assistance.';
-
     const hrAlert = hrStatus !== 'normal';
     const spo2Alert = spo2Status !== 'normal';
-
-    if (hrAlert && spo2Alert) {
-      return 'Both heart rate and SpO₂ need attention.';
-    }
-
+    if (hrAlert && spo2Alert) return 'Both heart rate and SpO₂ need attention.';
     if (hrAlert) {
-      if (data.hr > 100) return 'Heart rate is elevated.';
-      if (data.hr < 60) return 'Heart rate is low.';
+      if (data.hr > 100) return 'Heart rate is elevated / increasing.';
+      if (data.hr < 60) return 'Heart rate is low / dropping.';
     }
-
-    if (spo2Alert) {
-      return 'Blood oxygen level is dropping.';
-    }
-
+    if (spo2Alert) return 'Blood oxygen level is dropping.';
     return 'Somchai is healthy and at home';
   };
 
@@ -260,7 +271,7 @@ export default function Dashboard() {
                 <div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div>
                 <div className="vital-badge">{getBadgeLabel(hrStatus)}</div>
               </div>
-              <MiniSpark id="hr" value={data.hr} />
+              <MiniSpark id="hr" history={hrHistory} />
               <div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
             </div>
 
@@ -273,7 +284,7 @@ export default function Dashboard() {
                 <div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div>
                 <div className="vital-badge">{getBadgeLabel(spo2Status)}</div>
               </div>
-              <MiniSpark id="spo2" value={data.spo2} />
+              <MiniSpark id="spo2" history={spo2History} />
               <div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
             </div>
           </div>
@@ -290,7 +301,12 @@ export default function Dashboard() {
                 <button key={r} className={`ttab ${range === r ? 'active' : ''}`} onClick={() => setRange(r)}>{r}</button>
               ))}
             </div>
-            <VitalChart id={activeTab || 'hr'} range={range} value={activeTab === 'hr' ? data.hr : data.spo2} state={activeTab === 'hr' ? hrStatus : spo2Status} />
+            <VitalChart 
+                id={activeTab || 'hr'} 
+                range={range} 
+                history={activeTab === 'hr' ? hrHistory : spo2History} 
+                state={activeTab === 'hr' ? hrStatus : spo2Status} 
+            />
           </div>
         </div>
 
