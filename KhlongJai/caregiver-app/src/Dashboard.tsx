@@ -222,6 +222,66 @@ export default function Dashboard() {
   const [lastIncident, setLastIncident] = useState<any>(null);
   const lastSyncTime = useRef("");
   const lastFetchedCoords = useRef({ lat: 0, lng: 0 });
+  const audioCtx = useRef<AudioContext | null>(null);
+  const sirenInterval = useRef<any>(null);
+  const audioUnlocked = useRef(false);
+
+  // Siren generator using Web Audio API
+  const startSiren = () => {
+    if (!audioCtx.current) {
+      audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const ctx = audioCtx.current;
+    if (ctx.state === 'suspended') ctx.resume();
+    if (sirenInterval.current) return;
+
+    let high = true;
+    const playTone = () => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle'; // Softer, "Warm Minimal" tone
+      osc.frequency.setValueAtTime(high ? 780 : 520, ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+      high = !high;
+    };
+
+    playTone();
+    sirenInterval.current = setInterval(playTone, 500);
+  };
+
+  const stopSiren = () => {
+    if (sirenInterval.current) {
+      clearInterval(sirenInterval.current);
+      sirenInterval.current = null;
+    }
+  };
+
+  // Play/Stop alert sound based on overlay state
+  useEffect(() => {
+    if (overlayActive && (data.sos || data.fall)) {
+      startSiren();
+    } else {
+      stopSiren();
+    }
+    return () => stopSiren();
+  }, [overlayActive, data.sos, data.fall]);
+
+  const unlockAudio = () => {
+    if (!audioUnlocked.current) {
+      if (!audioCtx.current) {
+        audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      audioCtx.current.resume().then(() => {
+        audioUnlocked.current = true;
+        console.log("Audio system active.");
+      });
+    }
+  };
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -332,7 +392,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" onClick={unlockAudio}>
       {overlayActive && (data.sos || data.fall) && <EmergencyOverlay data={data} onDismiss={() => setOverlayActive(false)} onResolve={handleResolve} onCall={handleCall} onFalseAlarm={handleFalseAlarm} address={address} />}
       <div className="topbar"><div className="logo">KhlongJai</div><button className="profile-btn">C</button></div>
       <div className="scroll-area">
