@@ -272,11 +272,15 @@ export default function Dashboard() {
 
   const hrStatus = getStatus('hr', data.hr);
   const spo2Status = getStatus('spo2', data.spo2);
-  const globalState = (data.sos || data.fall || hrStatus === 'emergency' || spo2Status === 'emergency') ? 'emergency' : (hrStatus === 'anomaly' || spo2Status === 'anomaly') ? 'anomaly' : (hrStatus === 'watch' || spo2Status === 'watch') ? 'watch' : 'normal';
+  const isAtHome = useMemo(() => Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2)) < 0.001, [data.lat, data.lng, homeCoords]);
+  const isEmergency = data.sos || data.fall || hrStatus === 'emergency' || spo2Status === 'emergency';
+  const isAnomaly = hrStatus === 'anomaly' || spo2Status === 'anomaly';
+  const isWatch = hrStatus === 'watch' || spo2Status === 'watch' || !isAtHome;
+  const globalState = isEmergency ? 'emergency' : isAnomaly ? 'anomaly' : isWatch ? 'watch' : 'normal';
 
   const stateConfig: any = {
     normal: { heroIcon: '🌿', heroTitle: 'All is well', heroSub: 'Somchai is healthy and at home', badge: 'Normal' },
-    watch: { heroIcon: '👀', heroTitle: 'Worth keeping an eye on', heroSub: 'Vitals slightly elevated', badge: 'Watch' },
+    watch: { heroIcon: isAtHome ? '👀' : '📍', heroTitle: isAtHome ? 'Worth keeping an eye on' : 'Somchai is out', heroSub: 'Vitals slightly elevated', badge: 'Watch' },
     anomaly: { heroIcon: '⚠️', heroTitle: 'Something needs attention', heroSub: 'Metric dropping, watching closely', badge: 'Anomaly' },
     emergency: { heroIcon: '🚨', heroTitle: data.sos ? 'SOS Alert!' : data.fall ? 'Fall detected!' : 'Emergency Alert!', heroSub: 'Somchai may need immediate help', badge: 'Emergency' },
   };
@@ -288,6 +292,7 @@ export default function Dashboard() {
     if (hrStatus !== 'normal' && spo2Status !== 'normal') return 'Both heart rate and SpO₂ need attention.';
     if (hrStatus !== 'normal') return data.hr > 100 ? 'Heart rate is elevated / increasing.' : 'Heart rate is low / dropping.';
     if (spo2Status !== 'normal') return 'Blood oxygen level is dropping.';
+    if (!isAtHome) return 'Somchai is currently away from home.';
     return 'Somchai is healthy and at home';
   };
 
@@ -296,7 +301,6 @@ export default function Dashboard() {
   const handleResolve = () => { if (data.fall) setTodayFallCount(prev => prev + 1); setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() }); setOverlayActive(false); };
   const handleFalseAlarm = () => { setData({ ...data, sos: false, fall: false, lastUpdate: new Date().toISOString() }); setOverlayActive(false); };
   const handleCall = () => { window.open('tel:911'); handleResolve(); };
-  const isAtHome = useMemo(() => Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2)) < 0.001, [data.lat, data.lng, homeCoords]);
 
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayDataMock = [
@@ -319,22 +323,30 @@ export default function Dashboard() {
           <div><div className="hero-title">{cfg.heroTitle}</div><div className="hero-sub">{getHeroSub()}</div><div className="live-row"><span className="live-dot"></span><span className="live-text">Live · Updated {new Date(data.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
         </div>
 
-        <div className="vitals-block">
-          <div className="vitals-row">
-            <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
-              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
-              <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
-            </div>
-            <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
-              <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
-              <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
-            </div>
+        <div className="vitals-row">
+          <div className={`vital-card state-${hrStatus} ${activeTab === 'hr' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'hr' ? null : 'hr')}>
+            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A0522D" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Heart Rate</div><div><span className="vital-num">{data.hr}</span><span className="vital-unit">BPM</span></div><div className="vital-badge">{getBadgeLabel(hrStatus)}</div></div>
+            <MiniSpark id="hr" history={hrHistory} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
           </div>
-          <div className={`chart-drawer ${activeTab ? 'open' : ''} state-${activeTab === 'hr' ? hrStatus : spo2Status}`}>
-            <div className="drawer-header"><div className="drawer-title">{activeTab === 'hr' ? 'Heart Rate' : 'Blood Oxygen'}<div className="drawer-pill" style={{ background: 'var(--state-normal-badge-bg)', color: 'var(--state-normal-badge)' }}>{getBadgeLabel(activeTab === 'hr' ? hrStatus : spo2Status)}</div></div></div>
-            <div className="time-tabs">{['6h', '12h', '24h', '7d'].map(r => (<button key={r} className={`ttab ${range === r ? 'active' : ''}`} onClick={() => setRange(r)}>{r}</button>))}</div>
-            <VitalChart id={activeTab || 'hr'} range={range} history={activeTab === 'hr' ? hrHistory : spo2History} state={activeTab === 'hr' ? hrStatus : spo2Status} />
+          <div className={`vital-card state-${spo2Status} ${activeTab === 'spo2' ? 'drawer-open' : ''}`} onClick={() => setActiveTab(activeTab === 'spo2' ? null : 'spo2')}>
+            <div className="vital-top"><div className="vital-label"><svg className="pulse-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D6E4F" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/></svg> SpO₂</div><div><span className="vital-num">{data.spo2}</span><span className="vital-unit">%</span></div><div className="vital-badge">{getBadgeLabel(spo2Status)}</div></div>
+            <MiniSpark id="spo2" history={spo2History} /><div className="tap-hint">Trend <span className="tap-arrow">▾</span></div>
           </div>
+
+          {activeTab && (
+            <div className={`chart-drawer open state-${activeTab === 'hr' ? hrStatus : spo2Status}`}>
+              <div className="drawer-header">
+                <div className="drawer-title">
+                  {activeTab === 'hr' ? 'Heart Rate' : 'Blood Oxygen'}
+                  <div className="drawer-pill" style={{ background: 'var(--state-normal-badge-bg)', color: 'var(--state-normal-badge)' }}>{getBadgeLabel(activeTab === 'hr' ? hrStatus : spo2Status)}</div>
+                </div>
+              </div>
+              <div className="time-tabs">
+                {['6h', '12h', '24h', '7d'].map(r => (<button key={r} className={`ttab ${range === r ? 'active' : ''}`} onClick={() => setRange(r)}>{r}</button>))}
+              </div>
+              <VitalChart id={activeTab} range={range} history={activeTab === 'hr' ? hrHistory : spo2History} state={activeTab === 'hr' ? hrStatus : spo2Status} />
+            </div>
+          )}
         </div>
 
         <div className={`fall-card ${data.fall ? 'state-emergency' : ''}`}>
@@ -379,7 +391,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* NEW WEEKLY OVERVIEW CARD */}
         <div className={`week-card ${weekExpanded ? 'expanded' : ''}`}>
           <div className="week-header" onClick={() => setWeekExpanded(!weekExpanded)}>
             <div className="week-header-left"><h3>This Week</h3><p>3 Mar – 9 Mar · Somchai</p></div>
