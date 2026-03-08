@@ -245,9 +245,22 @@ body {
 .alarm-timer { font-size: 13px; color: rgba(255,255,255,.45); display: flex; align-items: center; gap: 6px; }
 .timer-val { font-family: 'DM Serif Display', serif; font-size: 22px; color: white; min-width: 60px; text-align: center; }
 .timer-unit { font-size: 11px; color: rgba(255,255,255,.4); }
-.elapsed-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); padding: 5px 12px; border-radius: 20px; margin-bottom: 18px; }
-.elapsed-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.8); animation: pulse-dot 1s ease infinite; }
-.elapsed-text { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+.elapsed-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255, 200, 100, 0.12); border: 1px solid rgba(255, 200, 100, 0.28);
+  padding: 7px 14px; border-radius: 30px; margin-bottom: 18px;
+}
+.pulse-dot-wrap { position: relative; width: 8px; height: 8px; flex-shrink: 0; }
+.pulse-dot-core { width: 8px; height: 8px; border-radius: 50%; background: #FCD34D; position: absolute; top: 0; left: 0; }
+.pulse-dot-ring { width: 8px; height: 8px; border-radius: 50%; background: #FCD34D; position: absolute; top: 0; left: 0; animation: dot-ring 1.4s ease-out infinite; }
+@keyframes dot-ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }
+.badge-text { font-size: 12px; font-weight: 600; color: #FCD34D !important; letter-spacing: 0.01em; }
+.no-response-text { animation: text-breathe 2.8s ease-in-out infinite; }
+@keyframes text-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.badge-timer { font-size: 12px; font-weight: 700; color: #FDE68A !important; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.badge-sep { width: 3px; height: 3px; border-radius: 50%; background: rgba(252, 211, 77, 0.4); flex-shrink: 0; }
+
 .overlay-vitals { display: flex; gap: 10px; padding: 0 20px 20px; position: relative; z-index: 1; }
 .ov-vital { flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 12px 14px; text-align: center; }
 .ov-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 4px; }

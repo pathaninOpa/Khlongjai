@@ -169,10 +169,14 @@ const EmergencyOverlay = ({ data, onDismiss }: { data: any, onDismiss: () => voi
           </div>
         )}
         <div className="alarm-label">{data.sos ? 'SOS ALERT' : 'FALL DETECTED'}</div>
-        <div className="alarm-title">Somchai has {data.sos ? 'requested help' : 'fallen'}</div>
+        <div className="alarm-title">Somchai needs help</div>
         <div className="alarm-name">Grandfather · Age 74</div>
         <div className="alarm-location"><MapPin size={11} /> Bedroom · Home</div>
-        <div className="alarm-timer"><span className="timer-label">{data.sos ? 'Requested' : 'Detected'}</span><span className="timer-val">{elapsed < 5 ? 'just now' : formatTime(elapsed)}</span></div>
+        <div className="alarm-timer">
+          <span className="timer-label">{data.sos ? 'Requested' : 'Detected'}</span>
+          <span className="timer-val">{elapsed < 5 ? 'just now' : formatTime(elapsed)}</span>
+          {elapsed >= 5 && <span className="timer-label" style={{ marginLeft: '4px' }}>ago</span>}
+        </div>
       </div>
       <div className="overlay-vitals">
         <div className="ov-vital">
@@ -192,7 +196,7 @@ const EmergencyOverlay = ({ data, onDismiss }: { data: any, onDismiss: () => voi
         </div>
       </div>
       <div className="overlay-actions">
-        <button className="btn-call"><Phone size={18} /> Call Somchai Now</button>
+        <button className="btn-call" onClick={() => window.open('tel:911')}><Phone size={18} /> Call Somchai Now</button>
         <button className="btn-map"><Navigation size={15} /> View Live Location</button>
         <button className="btn-dismiss" onClick={onDismiss}>This was a false alarm</button>
       </div>
