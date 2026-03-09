@@ -124,7 +124,7 @@ export default function ProfilePage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="elder-name">Somchai Jaidee</div>
-                <div className="elder-meta">Age 74 · Father · Wristband #001</div>
+                <div className="elder-meta">Age 74 · Father · Pendant #001</div>
               </div>
               <div className="elder-right">
                 <div className={`state-pill ${somchaiState === 'safe' ? 'pill-safe' : 'pill-watch'}`}>
@@ -226,9 +226,9 @@ export default function ProfilePage() {
               <button className="card-head-action">Manage</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 17px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ width: '38px', height: '38px', borderRadius: '13px', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⌚</div>
+              <div style={{ width: '38px', height: '38px', borderRadius: '13px', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🩶</div>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 600 }}>KJ-Wristband #001</div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>KJ-Pendant #001</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Last sync 2 min ago · Firmware v2.1.4</div>
               </div>
               <div style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 600, color: 'var(--green)', background: 'var(--green-light)', border: '1px solid #C5E0CE', padding: '3px 9px', borderRadius: '20px', flexShrink: 0 }}>Connected</div>
