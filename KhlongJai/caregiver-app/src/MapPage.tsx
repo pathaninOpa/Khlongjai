@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { MapPin, ChevronDown, Navigation, Clock, User, Heart, LayoutDashboard } from 'lucide-react'
+import { MapPin, ChevronDown, Clock, User, Heart } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, useMap, Circle } from 'react-leaflet'
 import { Link } from 'react-router-dom'
-import L from 'leaflet'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
@@ -16,7 +15,7 @@ function ChangeView({ center, zoom }: { center: [number, number], zoom?: number 
 }
 
 export default function MapPage() {
-  const [data, setData, requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
+  const [data, , requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
   const [address, setAddress] = useState("Locating...");
   const [homeCoords, setHomeCoords] = useState({ lat: 0, lng: 0 });
   const [mapExpanded, setMapExpanded] = useState(false);
