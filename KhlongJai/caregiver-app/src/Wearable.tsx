@@ -122,9 +122,10 @@ export default function Wearable() {
       </div>
 
       <div className="wearable-footer">
-        <div className="loc-badge"><MapPin size={14} /> {data.lat.toFixed(4)}, {data.lng.toFixed(4)}</div>
         <label className="toggle-label"><input type="checkbox" checked={isAuto} onChange={(e) => setIsAuto(e.target.checked)} />Auto-simulating</label>
       </div>
+
+      <div className="loc-badge">{data.lat.toFixed(4)}, {data.lng.toFixed(4)}</div>
     </div>
   )
 }

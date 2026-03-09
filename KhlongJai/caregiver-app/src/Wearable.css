@@ -18,6 +18,7 @@
   color: var(--text-wear);
   font-family: 'DM Sans', sans-serif;
   transition: background-color 0.4s;
+  position: relative;
 }
 
 .wearable-container.emergency {
@@ -109,12 +110,22 @@ input[type="range"] { width: 100%; accent-color: var(--text-wear); }
 .wearable-footer {
   margin-top: auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   font-size: 12px;
   color: var(--text-muted-wear);
 }
 
-.loc-badge { display: flex; align-items: center; gap: 4px; }
+.loc-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
+  font-family: monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.3);
+  background: none;
+  border: none;
+  padding: 0;
+}
 
 .toggle-label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
