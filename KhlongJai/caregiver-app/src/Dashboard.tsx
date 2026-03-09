@@ -328,7 +328,7 @@ export default function Dashboard() {
 
   const getStatus = (type: 'hr' | 'spo2', val: number) => {
     if (type === 'hr') {
-      if (val > 140 || val < 40) return 'emergency';
+      if (val > 140 || val < 45) return 'emergency';
       if (val > 120 || val < 50) return 'anomaly';
       if (val > 100 || val < 60) return 'watch';
       return 'normal';
