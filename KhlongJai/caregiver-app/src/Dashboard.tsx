@@ -394,7 +394,11 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container" onClick={unlockAudio}>
       {overlayActive && (data.sos || data.fall) && <EmergencyOverlay data={data} onDismiss={() => setOverlayActive(false)} onResolve={handleResolve} onCall={handleCall} onFalseAlarm={handleFalseAlarm} address={address} />}
-      <div className="topbar"><div className="logo">KhlongJai</div><button className="profile-btn">C</button></div>
+      <div className="topbar">
+        <div className="logo">KhlongJai</div>
+        <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Dashboard</div>
+      </div>
+
       <div className="scroll-area">
         <div className={`hero ${globalState}`} style={{ cursor: (data.sos || data.fall) ? 'pointer' : 'default' }} onClick={() => (data.sos || data.fall) && setOverlayActive(true)}>
           <div className="hero-icon">{cfg.heroIcon}</div>

@@ -253,7 +253,7 @@ export default function ProfilePage() {
                 <div className="thresh-label">Heart Rate · Resting</div>
                 <div className="thresh-val">68–74 BPM</div>
               </div>
-              <div className="range-bar">
+              <div className="range-bar full">
                 <div className="range-fill" style={{ left: '28%', width: '6%' }}></div>
                 <div className="range-thumb" style={{ left: '31%' }}></div>
               </div>
@@ -264,12 +264,47 @@ export default function ProfilePage() {
                 <div className="thresh-label">SpO₂ · Normal</div>
                 <div className="thresh-val">96–99%</div>
               </div>
-              <div className="range-bar">
+              <div className="range-bar full">
                 <div className="range-fill" style={{ left: '60%', width: '30%' }}></div>
                 <div className="range-thumb" style={{ left: '85%' }}></div>
               </div>
               <div className="thresh-foot"><span>Emergency &lt;90%</span><span>Watch &lt;94%</span><span>100%</span></div>
             </div>
+          </div>
+
+          <div className="sec">Emergency contacts</div>
+          <div className="card">
+            <div className="card-head">
+              <button className="card-head-action">Edit</button>
+            </div>
+            <div style={{ padding: '8px 17px 4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+              If you don’t respond within 3 min, the next contact is alerted automatically.
+            </div>
+            <div className="contact">
+              <div className="contact-num first">1</div>
+              <div>
+                <div className="contact-name">Wirut Jaidee <span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--green)' }}>(You)</span></div>
+                <div className="contact-sub">Son · Primary caregiver</div>
+              </div>
+              <div className="contact-phone">+66 89 123 4567</div>
+            </div>
+            <div className="contact">
+              <div className="contact-num">2</div>
+              <div>
+                <div className="contact-name">Nanthida Jaidee</div>
+                <div className="contact-sub">Daughter · If Wirut doesn’t respond</div>
+              </div>
+              <div className="contact-phone">+66 81 987 6543</div>
+            </div>
+            <div className="contact">
+              <div className="contact-num">3</div>
+              <div>
+                <div className="contact-name">Dr. Pranee Sukwong</div>
+                <div className="contact-sub">Doctor · Medical escalation</div>
+              </div>
+              <div className="contact-phone">02-022-2222</div>
+            </div>
+            <button style={{ width: '100%', textAlign: 'center', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer' }}>+ Add backup contact</button>
           </div>
 
           <button className="danger-btn" style={{ margin: '20px 16px' }}>Remove this elder from my account</button>
