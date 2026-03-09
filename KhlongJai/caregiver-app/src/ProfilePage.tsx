@@ -323,20 +323,20 @@ export default function ProfilePage() {
         <div className="scroll-area">
           <div className="sec">Account</div>
           <div className="card">
-            <div className="card-head"><div className="card-head-title">Your info</div></div>
+            <div className="card-head"><div className="card-head-title" style={{ color: 'var(--text-primary)' }}>Your info</div></div>
             <div className="row">
-              <div className="row-key">Name</div>
+              <div className="row-key" style={{ color: 'var(--text-primary)' }}>Name</div>
               <input style={{ border: 'none', background: 'none', textAlign: 'right', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'DM Sans', outline: 'none', flex: 1 }} defaultValue="Wirut Jaidee" />
             </div>
             <div className="row">
-              <div className="row-key">Role</div>
+              <div className="row-key" style={{ color: 'var(--text-primary)' }}>Role</div>
               <input style={{ border: 'none', background: 'none', textAlign: 'right', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'DM Sans', outline: 'none', flex: 1 }} defaultValue="Son" />
             </div>
           </div>
 
           <div className="sec">Escalation timing</div>
           <div className="card">
-            <div className="card-head"><div className="card-head-title">Auto-escalation delay</div></div>
+            <div className="card-head"><div className="card-head-title" style={{ color: 'var(--text-primary)' }}>Auto-escalation delay</div></div>
             <div style={{ padding: '10px 17px 4px', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
               If you don't respond within this time, the next contact is automatically alerted.
             </div>
