@@ -10,6 +10,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
+        id: 'com.khlongjai.app',
         name: 'KhlongJai Care (คล้องใจ)',
         short_name: 'KhlongJai',
         description: 'Elderly care monitoring system prototype',
@@ -18,7 +19,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: './',
+        // Removing start_url forces the browser to use the current page URL during install
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -39,16 +40,8 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Caregiver Dashboard',
-            short_name: 'Dashboard',
-            description: 'Monitoring dashboard',
-            url: '/',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
             name: 'Wearable Simulator',
             short_name: 'Wearable',
-            description: 'Simulate wearable data',
             url: '/wearable',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
