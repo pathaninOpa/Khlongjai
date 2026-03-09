@@ -41,7 +41,7 @@ export default function ProfilePage() {
   return (
     <div className="profile-page-container">
       {/* ── VIEW 1: PROFILE HOME ── */}
-      <div className={`view ${activeView === 'home' ? 'active' : ''} ${slideIn && activeView === 'home' ? 'slide-in' : ''}`}>
+      <div className={`profile-view ${activeView === 'home' ? 'active' : ''} ${slideIn && activeView === 'home' ? 'slide-in' : ''}`}>
         <div className="topbar">
           <div className="logo">KhlongJai</div>
           <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Profile</div>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── VIEW 2: ELDER DETAIL ── */}
-      <div className={`view ${activeView === 'elder-detail' ? 'active' : ''} ${slideIn && activeView === 'elder-detail' ? 'slide-in' : ''}`}>
+      <div className={`profile-view ${activeView === 'elder-detail' ? 'active' : ''} ${slideIn && activeView === 'elder-detail' ? 'slide-in' : ''}`}>
         <div className="topbar">
           <button className="back-btn" onClick={() => showView('home', false)}>
             <ChevronLeft size={17} /> Profile
@@ -312,7 +312,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── VIEW 3: CARETAKER EDIT ── */}
-      <div className={`view ${activeView === 'ct-edit' ? 'active' : ''} ${slideIn && activeView === 'ct-edit' ? 'slide-in' : ''}`}>
+      <div className={`profile-view ${activeView === 'ct-edit' ? 'active' : ''} ${slideIn && activeView === 'ct-edit' ? 'slide-in' : ''}`}>
         <div className="topbar">
           <button className="back-btn" onClick={() => showView('home', false)}>
             <ChevronLeft size={17} /> Profile

@@ -393,6 +393,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container" onClick={unlockAudio}>
+      <div className={`urgency-aura ${isEmergency ? 'active' : ''}`} />
       {overlayActive && (data.sos || data.fall) && <EmergencyOverlay data={data} onDismiss={() => setOverlayActive(false)} onResolve={handleResolve} onCall={handleCall} onFalseAlarm={handleFalseAlarm} address={address} />}
       <div className="topbar">
         <div className="logo">KhlongJai</div>
