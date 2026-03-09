@@ -1,0 +1,252 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronLeft, Plus, User, Heart, MapPin, Clock } from 'lucide-react'
+import { useBroadcastSync } from './useBroadcastSync'
+import './App.css'
+
+export default function ProfilePage() {
+  const [data, setData, requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
+  const [activeView, setActiveView] = useState('home');
+  const [slideIn, setSlideIn] = useState(false);
+  const [escalationDelay, setEscalationDelay] = useState(3);
+  
+  useEffect(() => {
+    requestSync();
+  }, []);
+
+  const showView = (view: string, slide = false) => {
+    setSlideIn(slide);
+    setActiveView(view);
+    window.scrollTo(0, 0);
+  };
+
+  const getStatus = (type: 'hr' | 'spo2', val: number) => {
+    if (type === 'hr') {
+      if (val > 140 || val < 40) return 'emergency';
+      if (val > 120 || val < 50) return 'anomaly';
+      if (val > 100 || val < 60) return 'watch';
+      return 'normal';
+    } else {
+      if (val < 88) return 'emergency';
+      if (val < 92) return 'anomaly';
+      if (val < 95) return 'watch';
+      return 'normal';
+    }
+  };
+
+  const hrStatus = getStatus('hr', data.hr);
+  const spo2Status = getStatus('spo2', data.spo2);
+  const somchaiState = (hrStatus === 'emergency' || spo2Status === 'emergency' || hrStatus === 'anomaly' || spo2Status === 'anomaly') ? 'watch' : (hrStatus === 'watch' || spo2Status === 'watch') ? 'watch' : 'safe';
+
+  return (
+    <div className="profile-page-container">
+      {/* ── VIEW 1: PROFILE HOME ── */}
+      <div className={`view ${activeView === 'home' ? 'active' : ''} ${slideIn && activeView === 'home' ? 'slide-in' : ''}`}>
+        <div className="topbar">
+          <div className="logo"><span className="logo-dot"></span>KhlongJai</div>
+          <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Profile</div>
+          <div style={{ width: '36px' }}></div>
+        </div>
+        
+        <div className="scroll-area">
+          <div className="sec">Caretaker</div>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Caregiver profile</div>
+              <button className="card-head-action" onClick={() => showView('ct-edit', true)}>Edit</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '14px 17px' }}>
+              <div style={{ width: '46px', height: '46px', borderRadius: '16px', flexShrink: 0, background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: 'var(--bg)' }}>W</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Wirut Jaidee</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Son · Primary caregiver</div>
+              </div>
+            </div>
+            <div className="row" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="row-key">Phone</div>
+              <div className="row-val">+66 89 123 4567</div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Alert preferences</div>
+            </div>
+            <div className="row">
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>Push notifications</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>All alert states</div>
+              </div>
+              <button className="toggle on"></button>
+            </div>
+            <div className="row">
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>Call on Emergency</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Calls if no response within {escalationDelay} min</div>
+              </div>
+              <button className="toggle on"></button>
+            </div>
+          </div>
+
+          <div className="sec" style={{ marginTop: '4px' }}>My elders</div>
+          <div className="elder-card" onClick={() => showView('elder-detail', true)}>
+            <div className="elder-top">
+              <div className="elder-avatar" style={{ background: 'var(--bg)' }}>
+                👴
+                <div className={`elder-ring ${somchaiState === 'safe' ? 'green' : 'amber'}`}></div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="elder-name">Somchai Jaidee</div>
+                <div className="elder-meta">Age 74 · Father · Wristband #001</div>
+              </div>
+              <div className="elder-right">
+                <div className={`state-pill ${somchaiState === 'safe' ? 'pill-safe' : 'pill-watch'}`}>
+                  ● {somchaiState === 'safe' ? 'Safe' : 'Watch'}
+                </div>
+                <div className="batt-row">
+                  <div className="batt"><div className="batt-fill" style={{ right: '1px', background: 'var(--green)' }}></div></div>
+                  82%
+                </div>
+              </div>
+            </div>
+            <div className="chip-strip">
+              <span className="chip cond">Hypertension</span>
+              <span className="chip cond">Type 2 Diabetes</span>
+              <span className="chip med">Metoprolol</span>
+              <span className="chip med">Metformin</span>
+              <span className="chip">+1 med</span>
+            </div>
+          </div>
+
+          <button className="add-btn"><Plus size={15} /> Add another elder device</button>
+          <button style={{ background: 'none', border: 'none', width: '100%', textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>Sign out</button>
+        </div>
+      </div>
+
+      {/* ── VIEW 2: ELDER DETAIL ── */}
+      <div className={`view ${activeView === 'elder-detail' ? 'active' : ''} ${slideIn && activeView === 'elder-detail' ? 'slide-in' : ''}`}>
+        <div className="topbar">
+          <button className="back-btn" onClick={() => showView('home', false)}>
+            <ChevronLeft size={17} /> Profile
+          </button>
+          <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Somchai</div>
+          <button className="topbar-save">Save</button>
+        </div>
+        <div className="scroll-area">
+          <div className="sec">Personal info</div>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Identity</div>
+              <button className="card-head-action">Edit</button>
+            </div>
+            <div className="row"><div className="row-key">Full name</div><div className="row-val">Somchai Jaidee</div></div>
+            <div className="row"><div className="row-key">Date of birth</div><div className="row-val">12 Mar 1951 · Age 74</div></div>
+            <div className="row"><div className="row-key">Blood type</div><div className="row-val">O+</div></div>
+            <div className="row"><div className="row-key">Relationship</div><div className="row-val">Father</div></div>
+          </div>
+
+          <div className="sec">Medical context</div>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Known conditions</div>
+              <button className="card-head-action">+ Add</button>
+            </div>
+            <div className="chip-strip" style={{ padding: '12px 17px' }}>
+              <span className="chip cond">Hypertension</span>
+              <span className="chip cond">Type 2 Diabetes</span>
+              <span className="chip cond">Mild hearing loss</span>
+            </div>
+            <div style={{ padding: '0 17px 13px', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              Conditions inform how vitals are interpreted — hypertension means Somchai's resting HR may naturally sit higher.
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Medications</div>
+              <button className="card-head-action">+ Add</button>
+            </div>
+            <div className="med-row">
+              <div><div className="med-name">Metoprolol 25mg</div><div className="med-sub">Once daily · Morning · Beta-blocker</div></div>
+              <div className="med-tag affects">Affects HR ↓</div>
+            </div>
+            <div className="med-row">
+              <div><div className="med-name">Metformin 500mg</div><div className="med-sub">Twice daily · After meals · Antidiabetic</div></div>
+              <div className="med-tag neutral">No HR effect</div>
+            </div>
+          </div>
+
+          <div className="sec">Monitoring setup</div>
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Wearable device</div>
+              <button className="card-head-action">Manage</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 17px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '13px', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⌚</div>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>KJ-Wristband #001</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Last sync 2 min ago · Firmware v2.1.4</div>
+              </div>
+              <div style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 600, color: 'var(--green)', background: 'var(--green-light)', border: '1px solid #C5E0CE', padding: '3px 9px', borderRadius: '20px', flexShrink: 0 }}>Connected</div>
+            </div>
+            <div className="stat-strip" style={{ paddingTop: '12px' }}>
+              <div className="stat-box"><div className="stat-num">82%</div><div className="stat-lbl">Battery</div></div>
+              <div className="stat-box"><div className="stat-num">98%</div><div className="stat-lbl">Uptime</div></div>
+              <div className="stat-box"><div className="stat-num">7d</div><div className="stat-lbl">Calibrated</div></div>
+            </div>
+          </div>
+
+          <button className="danger-btn">Remove this elder from my account</button>
+        </div>
+      </div>
+
+      {/* ── VIEW 3: CARETAKER EDIT ── */}
+      <div className={`view ${activeView === 'ct-edit' ? 'active' : ''} ${slideIn && activeView === 'ct-edit' ? 'slide-in' : ''}`}>
+        <div className="topbar">
+          <button className="back-btn" onClick={() => showView('home', false)}>
+            <ChevronLeft size={17} /> Profile
+          </button>
+          <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>My account</div>
+          <button className="topbar-save" onClick={() => showView('home', false)}>Save</button>
+        </div>
+        <div className="scroll-area">
+          <div className="sec">Account</div>
+          <div className="card">
+            <div className="card-head"><div className="card-head-title">Your info</div></div>
+            <div className="row">
+              <div className="row-key">Name</div>
+              <input style={{ border: 'none', background: 'none', textAlign: 'right', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'DM Sans', outline: 'none', flex: 1 }} defaultValue="Wirut Jaidee" />
+            </div>
+            <div className="row">
+              <div className="row-key">Role</div>
+              <input style={{ border: 'none', background: 'none', textAlign: 'right', fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'DM Sans', outline: 'none', flex: 1 }} defaultValue="Son" />
+            </div>
+          </div>
+
+          <div className="sec">Escalation timing</div>
+          <div className="card">
+            <div className="card-head"><div className="card-head-title">Auto-escalation delay</div></div>
+            <div style={{ padding: '10px 17px 4px', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              If you don't respond within this time, the next contact is automatically alerted.
+            </div>
+            <div className="delay-strip">
+              {[1, 3, 5, 10].map(m => (
+                <button key={m} className={`delay-pill ${escalationDelay === m ? 'active' : ''}`} onClick={() => setEscalationDelay(m)}>{m} min</button>
+              ))}
+            </div>
+          </div>
+
+          <button className="danger-btn">Delete account</button>
+        </div>
+      </div>
+
+      <nav className="bottom-nav">
+        <Link to="/" className="ni"><Clock size={21} /><span className="ni-lbl">Dashboard</span></Link>
+        <Link to="/map" className="ni"><MapPin size={21} /><span className="ni-lbl">Map</span></Link>
+        <Link to="/vitals" className="ni"><Heart size={21} /><span className="ni-lbl">Vitals</span></Link>
+        <Link to="/profile" className="ni on"><User size={21} /><span className="ni-lbl">Profile</span></Link>
+      </nav>
+    </div>
+  )
+}

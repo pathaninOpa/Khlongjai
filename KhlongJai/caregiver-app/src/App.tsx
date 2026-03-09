@@ -3,6 +3,7 @@ import Dashboard from './Dashboard'
 import Wearable from './Wearable'
 import MapPage from './MapPage'
 import VitalsPage from './VitalsPage'
+import ProfilePage from './ProfilePage'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/vitals" element={<VitalsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/wearable" element={<Wearable />} />
       </Routes>
     </BrowserRouter>

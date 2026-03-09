@@ -230,7 +230,7 @@ export default function VitalsPage() {
         <Link to="/" className="ni"><Clock size={21} /><span className="ni-lbl">Dashboard</span></Link>
         <Link to="/map" className="ni"><MapPin size={21} /><span className="ni-lbl">Map</span></Link>
         <Link to="/vitals" className="ni on"><Heart size={21} /><span className="ni-lbl">Vitals</span></Link>
-        <button className="ni"><User size={21} /><span className="ni-lbl">Profile</span></button>
+        <Link to="/profile" className="ni"><User size={21} /><span className="ni-lbl">Profile</span></Link>
       </nav>
     </div>
   )
