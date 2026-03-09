@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Heart, Wind, MapPin, ShieldCheck, Clock, Home, User, Phone, Navigation, ChevronRight, ChevronDown, AlertTriangle, LayoutDashboard } from 'lucide-react'
+import { Heart, MapPin, Clock, User, Phone, Navigation, ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import { Link } from 'react-router-dom'
 import L from 'leaflet'

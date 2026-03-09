@@ -1,19 +1,14 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { Heart, Wind, ChevronDown, Clock, MapPin, User, LayoutDashboard, CheckCircle2, AlertCircle, Info, Stethoscope, Droplets, Activity } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Heart, ChevronDown, Clock, MapPin, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
 export default function VitalsPage() {
-  const [data, setData, requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 13.7563, lng: 100.5018, lastUpdate: "" });
+  const [data, , requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 13.7563, lng: 100.5018, lastUpdate: "" });
   const [expandedSections, setExpandedSections] = useState<string[]>(['hr-affects']);
-  const [homeCoords, setHomeCoords] = useState({ lat: 0, lng: 0 });
-  const lastSyncTime = useRef("");
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setHomeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    });
     requestSync();
   }, []);
 
@@ -40,19 +35,14 @@ export default function VitalsPage() {
   const hrStatus = getStatus('hr', data.hr);
   const spo2Status = getStatus('spo2', data.spo2);
   
-  const isAtHome = useMemo(() => {
-    if (data.lastUpdate === "" || homeCoords.lat === 0) return true;
-    return Math.sqrt(Math.pow(data.lat - homeCoords.lat, 2) + Math.pow(data.lng - homeCoords.lng, 2)) < 0.001;
-  }, [data.lat, data.lng, data.lastUpdate, homeCoords]);
-
   const isAnomaly = hrStatus === 'emergency' || spo2Status === 'emergency' || hrStatus === 'anomaly' || spo2Status === 'anomaly';
   const isWatch = hrStatus === 'watch' || spo2Status === 'watch';
   const globalState = isAnomaly ? 'anomaly' : isWatch ? 'watch' : 'normal';
 
   const stateConfig: any = {
-    normal: { heroIcon: '🌿', heroTitle: 'All is well', heroSub: 'Both readings are healthy today' },
-    watch: { heroIcon: '👀', heroTitle: 'Heart rate slightly elevated — keep an eye on it', heroSub: 'Vitals slightly elevated' },
-    anomaly: { heroIcon: '⚠️', heroTitle: 'Heart rate requires attention now', heroSub: 'Metric dropping, watching closely' },
+    normal: { heroIcon: '🌿', heroTitle: 'All is well' },
+    watch: { heroIcon: '👀', heroTitle: 'Heart rate slightly elevated — keep an eye on it' },
+    anomaly: { heroIcon: '⚠️', heroTitle: 'Heart rate requires attention now' },
   };
 
   const getHeroSub = () => {
@@ -101,7 +91,6 @@ export default function VitalsPage() {
                 <div className="rv-unit">BPM</div>
               </div>
               <div className="reading-state">
-                <span className="state-dot"></span>
                 <span>
                   {hrStatus === 'normal' ? 'Healthy resting rate' : 
                    hrStatus === 'watch' ? (data.hr < 60 ? '↓ Mildly low' : '↑ Mildly elevated') : 
@@ -127,7 +116,7 @@ export default function VitalsPage() {
 
             <div className={`expand-section ${expandedSections.includes('hr-affects') ? 'open' : ''}`}>
               <div className="expand-trigger" onClick={() => toggleSection('hr-affects')}>
-                <span className="exp-label"><Info size={14} className="exp-icon" /> What affects heart rate</span>
+                <span className="exp-label">📖 What affects heart rate</span>
                 <ChevronDown size={15} className="exp-chevron" />
               </div>
               <div className="expand-body">
@@ -143,7 +132,7 @@ export default function VitalsPage() {
           </div>
 
           <div className={`threshold-callout ${hrStatus === 'normal' ? 'green' : hrStatus === 'watch' ? 'amber' : 'red'}`}>
-            <div className="tc-icon">{hrStatus === 'normal' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}</div>
+            <div className="tc-icon">🩺</div>
             <div className="tc-text">
               {hrStatus === 'normal' 
                 ? "Somchai's HR today is within his personal baseline. No action needed." 
@@ -158,7 +147,7 @@ export default function VitalsPage() {
         {/* ── SpO₂ CARD ── */}
         <div className={`metric-card state-${spo2Status === 'emergency' || spo2Status === 'anomaly' ? 'anomaly' : spo2Status}`}>
           <div className="reading-row">
-            <div className="reading-icon spo2-icon"><Wind size={20} color="var(--spo2-accent)" /></div>
+            <div className="reading-icon spo2-icon">💧</div>
             <div className="reading-main">
               <div className="reading-label">Blood Oxygen · SpO₂</div>
               <div className="reading-value">
@@ -166,7 +155,6 @@ export default function VitalsPage() {
                 <div className="rv-unit">%</div>
               </div>
               <div className="reading-state">
-                <span className="state-dot"></span>
                 <span>
                   {spo2Status === 'normal' ? 'Near-maximum oxygen' : 
                    spo2Status === 'watch' ? '↓ Mildly low' : 
@@ -192,7 +180,7 @@ export default function VitalsPage() {
           </div>
 
           <div className={`threshold-callout ${spo2Status === 'normal' ? 'green' : 'amber'}`}>
-            <div className="tc-icon">{spo2Status === 'normal' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}</div>
+            <div className="tc-icon">🩺</div>
             <div className="tc-text">
               {spo2Status === 'normal' 
                 ? "SpO₂ is excellent today. near-optimal for Somchai's age." 

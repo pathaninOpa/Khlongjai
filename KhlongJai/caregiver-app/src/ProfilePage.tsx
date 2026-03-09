@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, Plus, User, Heart, MapPin, Clock, Battery, AlertTriangle, Shield, Settings, LogOut, Phone, Smartphone, Bell, Calendar } from 'lucide-react'
+import { ChevronLeft, User, Heart, MapPin, Clock, LogOut, Phone, Bell, Calendar, Plus } from 'lucide-react'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
 export default function ProfilePage() {
-  const [data, setData, requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
+  const [data, , requestSync] = useBroadcastSync<any>({ hr: 72, spo2: 98, sos: false, fall: false, lat: 0, lng: 0, lastUpdate: "" });
   const [activeView, setActiveView] = useState('home');
   const [slideIn, setSlideIn] = useState(false);
   const [escalationDelay, setEscalationDelay] = useState(3);
