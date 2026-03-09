@@ -67,8 +67,8 @@ export default function VitalsPage() {
   return (
     <div className="vitals-page-container">
       <div className="topbar">
-        <div className="logo"><span className="logo-dot"></span>KhlongJai</div>
-        <button className="profile-btn">C</button>
+        <div className="logo">KhlongJai</div>
+        <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Vitals</div>
       </div>
 
       <div className="scroll-area">

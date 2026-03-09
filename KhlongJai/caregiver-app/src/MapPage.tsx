@@ -59,8 +59,8 @@ export default function MapPage() {
   return (
     <div className="map-page-container">
       <div className="topbar">
-        <div className="logo"><span className="logo-dot"></span>KhlongJai</div>
-        <button className="profile-btn">C</button>
+        <div className="logo">KhlongJai</div>
+        <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Map</div>
       </div>
 
       <div className="scroll-area">

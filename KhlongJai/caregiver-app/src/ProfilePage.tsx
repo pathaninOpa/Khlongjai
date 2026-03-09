@@ -43,9 +43,8 @@ export default function ProfilePage() {
       {/* ── VIEW 1: PROFILE HOME ── */}
       <div className={`view ${activeView === 'home' ? 'active' : ''} ${slideIn && activeView === 'home' ? 'slide-in' : ''}`}>
         <div className="topbar">
-          <div className="logo"><span className="logo-dot"></span>KhlongJai</div>
+          <div className="logo">KhlongJai</div>
           <div style={{ fontFamily: 'DM Serif Display', fontSize: '18px' }}>Profile</div>
-          <div style={{ width: '36px' }}></div>
         </div>
         
         <div className="scroll-area">
@@ -118,7 +117,7 @@ export default function ProfilePage() {
             </div>
             
             {/* Somchai Item */}
-            <div className="elder-top" style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => showView('elder-detail', true)}>
+            <div className="elder-top" style={{ cursor: 'pointer' }} onClick={() => showView('elder-detail', true)}>
               <div className="elder-avatar" style={{ background: 'var(--bg)' }}>
                 👴
                 <div className={`elder-ring ${somchaiState === 'safe' ? 'green' : 'amber'}`}></div>
@@ -137,24 +136,12 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-
-            {/* Malee Item */}
-            <div className="elder-top" style={{ cursor: 'pointer' }}>
-              <div className="elder-avatar" style={{ background: 'var(--bg)' }}>
-                👵
-                <div className="elder-ring amber"></div>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="elder-name">Malee Jaidee</div>
-                <div className="elder-meta">Age 71 · Mother · Wristband #002</div>
-              </div>
-              <div className="elder-right">
-                <div className="state-pill pill-watch">● Watch</div>
-                <div className="batt-row">
-                  <div className="batt"><div className="batt-fill" style={{ right: '65%', background: 'var(--state-watch-badge)' }}></div></div>
-                  34%
-                </div>
-              </div>
+            <div className="chip-strip" style={{ paddingBottom: '15px' }}>
+              <span className="chip cond">Hypertension</span>
+              <span className="chip cond">Type 2 Diabetes</span>
+              <span className="chip med">Metoprolol</span>
+              <span className="chip med">Metformin</span>
+              <span className="chip">+1 med</span>
             </div>
           </div>
 
@@ -215,6 +202,21 @@ export default function ProfilePage() {
               <div><div className="med-name">Metformin 500mg</div><div className="med-sub">Twice daily · After meals · Antidiabetic</div></div>
               <div className="med-tag neutral">No HR effect</div>
             </div>
+            <div className="med-row">
+              <div><div className="med-name">Amlodipine 5mg</div><div className="med-sub">Once daily · Evening · Calcium channel blocker</div></div>
+              <div className="med-tag affects">Affects HR ↓</div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Doctor & hospital</div>
+              <button className="card-head-action">Edit</button>
+            </div>
+            <div className="row"><div className="row-key">Doctor</div><div className="row-val">Dr. Pranee Sukwong</div></div>
+            <div className="row"><div className="row-key">Clinic</div><div className="row-val">Samitivej Sukhumvit</div></div>
+            <div className="row"><div className="row-key">Phone</div><div className="row-val green">02-022-2222</div></div>
+            <div className="row"><div className="row-key">Hospital</div><div className="row-val">Bangkok Hospital</div></div>
           </div>
 
           <div className="sec">Monitoring setup</div>
@@ -235,6 +237,38 @@ export default function ProfilePage() {
               <div className="stat-box"><div className="stat-num">82%</div><div className="stat-lbl">Battery</div></div>
               <div className="stat-box"><div className="stat-num">98%</div><div className="stat-lbl">Uptime</div></div>
               <div className="stat-box"><div className="stat-num">7d</div><div className="stat-lbl">Calibrated</div></div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Personal thresholds</div>
+              <button className="card-head-action">Recalibrate</button>
+            </div>
+            <div style={{ padding: '10px 17px 4px', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              Calibrated from Somchai’s 7-day baseline — alerts use <em>his</em> ranges, not generic clinical values.
+            </div>
+            <div className="thresh-row">
+              <div className="thresh-top">
+                <div className="thresh-label">Heart Rate · Resting</div>
+                <div className="thresh-val">68–74 BPM</div>
+              </div>
+              <div className="range-bar">
+                <div className="range-fill" style={{ left: '28%', width: '6%' }}></div>
+                <div className="range-thumb" style={{ left: '31%' }}></div>
+              </div>
+              <div className="thresh-foot"><span>40</span><span>Watch &gt;96</span><span>Emergency &gt;140</span></div>
+            </div>
+            <div className="thresh-row">
+              <div className="thresh-top">
+                <div className="thresh-label">SpO₂ · Normal</div>
+                <div className="thresh-val">96–99%</div>
+              </div>
+              <div className="range-bar">
+                <div className="range-fill" style={{ left: '60%', width: '30%' }}></div>
+                <div className="range-thumb" style={{ left: '85%' }}></div>
+              </div>
+              <div className="thresh-foot"><span>Emergency &lt;90%</span><span>Watch &lt;94%</span><span>100%</span></div>
             </div>
           </div>
 
