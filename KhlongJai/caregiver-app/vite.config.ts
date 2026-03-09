@@ -39,9 +39,16 @@ export default defineConfig({
         ],
         shortcuts: [
           {
+            name: 'Caregiver Dashboard',
+            short_name: 'Dashboard',
+            description: 'Monitoring dashboard',
+            url: '/',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
             name: 'Wearable Simulator',
-            short_name: 'Simulator',
-            description: 'Open the wearable simulator',
+            short_name: 'Wearable',
+            description: 'Simulate wearable data',
             url: '/wearable',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
@@ -51,7 +58,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: true
+        skipWaiting: true,
+        navigateFallback: 'index.html'
       }
     })
   ],
