@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, User, Heart, MapPin, Clock, LogOut, Phone, Bell, Calendar, Plus } from 'lucide-react'
+import { ChevronLeft, User, Heart, MapPin, Clock, LogOut, Phone, Bell, Calendar } from 'lucide-react'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
