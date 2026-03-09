@@ -534,7 +534,7 @@ export default function Dashboard() {
       <nav className="bottom-nav">
         <Link to="/" className="ni on"><Clock size={21} /><span className="ni-lbl">Dashboard</span></Link>
         <Link to="/map" className="ni"><MapPin size={21} /><span className="ni-lbl">Map</span></Link>
-        <button className="ni"><Heart size={21} /><span className="ni-lbl">Vitals</span></button>
+        <Link to="/vitals" className="ni"><Heart size={21} /><span className="ni-lbl">Vitals</span></Link>
         <button className="ni"><User size={21} /><span className="ni-lbl">Profile</span></button>
       </nav>
     </div>

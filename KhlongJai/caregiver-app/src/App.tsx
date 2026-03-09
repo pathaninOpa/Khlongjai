@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './Dashboard'
 import Wearable from './Wearable'
 import MapPage from './MapPage'
+import VitalsPage from './VitalsPage'
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/map" element={<MapPage />} />
+        <Route path="/vitals" element={<VitalsPage />} />
         <Route path="/wearable" element={<Wearable />} />
       </Routes>
     </BrowserRouter>
