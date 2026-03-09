@@ -12,6 +12,20 @@
     <meta name="apple-mobile-web-app-title" content="KhlongJai">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+    <!-- Dynamic Manifest Switcher -->
+    <script>
+      (function() {
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        if (window.location.pathname.includes('/wearable')) {
+          manifestLink.href = '/wearable-manifest.json';
+        } else {
+          manifestLink.href = '/dashboard-manifest.json';
+        }
+        document.head.appendChild(manifestLink);
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
