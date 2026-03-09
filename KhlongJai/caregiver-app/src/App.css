@@ -976,6 +976,9 @@ body {
 .thresh-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
 .thresh-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); }
 .thresh-val   { font-size:12px; font-weight:600; color:var(--text-primary); }
+.range-bar    { height:5px; background:var(--border); border-radius:10px; position:relative; }
+.range-fill   { height:100%; border-radius:10px; position:absolute; background:var(--green-light); border:1px solid #C5E0CE; }
+.range-thumb  { width:11px; height:11px; border-radius:50%; border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,.2); position:absolute; top:-3px; transform:translateX(-50%); background:var(--text-primary); }
 .thresh-foot  { display:flex; justify-content:space-between; margin-top:5px; }
 .thresh-foot span { font-size:9px; color:var(--text-muted); }
 
@@ -992,3 +995,11 @@ body {
 .delay-pill.active { background:var(--green-light); border-color:#C5E0CE; color:var(--green); }
 
 .danger-btn { width:calc(100% - 32px); margin: 0 16px; padding:13px; border-radius:var(--radius-sm); background:var(--state-emergency-bg); border:1px solid var(--state-emergency-border); font-size:13px; font-weight:600; color:var(--state-emergency-badge); cursor:pointer; }
+
+.card { 
+  background: #FFFFFF; 
+  border-radius: var(--radius); 
+  box-shadow: var(--shadow); 
+  overflow: hidden; 
+  border: 1.5px solid var(--border);
+}

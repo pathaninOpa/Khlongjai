@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, Plus, User, Heart, MapPin, Clock } from 'lucide-react'
+import { ChevronLeft, Plus, User, Heart, MapPin, Clock, Battery, AlertTriangle, Shield, Settings, LogOut, Phone, Smartphone, Bell, Calendar } from 'lucide-react'
 import { useBroadcastSync } from './useBroadcastSync'
 import './App.css'
 
@@ -50,47 +50,75 @@ export default function ProfilePage() {
         
         <div className="scroll-area">
           <div className="sec">Caretaker</div>
+          
+          {/* ── Caretaker Card ── */}
           <div className="card">
             <div className="card-head">
               <div className="card-head-title">Caregiver profile</div>
               <button className="card-head-action" onClick={() => showView('ct-edit', true)}>Edit</button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '14px 17px' }}>
-              <div style={{ width: '46px', height: '46px', borderRadius: '16px', flexShrink: 0, background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: 'var(--bg)' }}>W</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '16px 17px' }}>
+              <div style={{ width: '46px', height: '46px', borderRadius: '12px', flexShrink: 0, background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', color: 'var(--bg)', fontWeight: 600 }}>W</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Wirut Jaidee</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Son · Primary caregiver</div>
               </div>
             </div>
-            <div className="row" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="row">
               <div className="row-key">Phone</div>
               <div className="row-val">+66 89 123 4567</div>
             </div>
           </div>
 
+          {/* ── Alert Preferences Card ── */}
           <div className="card">
             <div className="card-head">
               <div className="card-head-title">Alert preferences</div>
+              <button className="card-head-action">Settings</button>
             </div>
             <div className="row">
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: 500 }}>Push notifications</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>All alert states</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Bell size={16} color="var(--text-muted)" />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Push notifications</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>All alert states</div>
+                </div>
               </div>
               <button className="toggle on"></button>
             </div>
             <div className="row">
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: 500 }}>Call on Emergency</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Calls if no response within {escalationDelay} min</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Phone size={16} color="var(--text-muted)" />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Call on Emergency</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Response time: {escalationDelay} min</div>
+                </div>
+              </div>
+              <button className="toggle on"></button>
+            </div>
+            <div className="row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Calendar size={16} color="var(--text-muted)" />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Daily summary</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>Morning recap at 8:00 AM</div>
+                </div>
               </div>
               <button className="toggle on"></button>
             </div>
           </div>
 
           <div className="sec" style={{ marginTop: '4px' }}>My elders</div>
-          <div className="elder-card" onClick={() => showView('elder-detail', true)}>
-            <div className="elder-top">
+          
+          {/* ── My Elders Card Wrapper ── */}
+          <div className="card">
+            <div className="card-head">
+              <div className="card-head-title">Monitored devices</div>
+              <button className="card-head-action">+ Add</button>
+            </div>
+            
+            {/* Somchai Item */}
+            <div className="elder-top" style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => showView('elder-detail', true)}>
               <div className="elder-avatar" style={{ background: 'var(--bg)' }}>
                 👴
                 <div className={`elder-ring ${somchaiState === 'safe' ? 'green' : 'amber'}`}></div>
@@ -109,17 +137,30 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-            <div className="chip-strip">
-              <span className="chip cond">Hypertension</span>
-              <span className="chip cond">Type 2 Diabetes</span>
-              <span className="chip med">Metoprolol</span>
-              <span className="chip med">Metformin</span>
-              <span className="chip">+1 med</span>
+
+            {/* Malee Item */}
+            <div className="elder-top" style={{ cursor: 'pointer' }}>
+              <div className="elder-avatar" style={{ background: 'var(--bg)' }}>
+                👵
+                <div className="elder-ring amber"></div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="elder-name">Malee Jaidee</div>
+                <div className="elder-meta">Age 71 · Mother · Wristband #002</div>
+              </div>
+              <div className="elder-right">
+                <div className="state-pill pill-watch">● Watch</div>
+                <div className="batt-row">
+                  <div className="batt"><div className="batt-fill" style={{ right: '65%', background: 'var(--state-watch-badge)' }}></div></div>
+                  34%
+                </div>
+              </div>
             </div>
           </div>
 
-          <button className="add-btn"><Plus size={15} /> Add another elder device</button>
-          <button style={{ background: 'none', border: 'none', width: '100%', textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>Sign out</button>
+          <button style={{ background: 'none', border: 'none', width: '100%', textAlign: 'center', padding: '16px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <LogOut size={16} /> Sign out
+          </button>
         </div>
       </div>
 
@@ -197,7 +238,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button className="danger-btn">Remove this elder from my account</button>
+          <button className="danger-btn" style={{ margin: '20px 16px' }}>Remove this elder from my account</button>
         </div>
       </div>
 
@@ -237,7 +278,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button className="danger-btn">Delete account</button>
+          <button className="danger-btn" style={{ margin: '20px 16px' }}>Delete account</button>
         </div>
       </div>
 
