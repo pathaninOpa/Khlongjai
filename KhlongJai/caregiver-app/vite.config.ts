@@ -10,10 +10,15 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'KhlongJai Dash (คล้องใจ)',
-        short_name: 'KhlongJaiDash',
-        description: 'Caregiver Monitoring Dashboard for elderly individuals',
-        theme_color: '#ffffff',
+        name: 'KhlongJai Care (คล้องใจ)',
+        short_name: 'KhlongJai',
+        description: 'Elderly care monitoring system prototype',
+        theme_color: '#F4F1ED',
+        background_color: '#F4F1ED',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -31,7 +36,22 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'any maskable'
           }
+        ],
+        shortcuts: [
+          {
+            name: 'Wearable Simulator',
+            short_name: 'Simulator',
+            description: 'Open the wearable simulator',
+            url: '/wearable',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       }
     })
   ],
